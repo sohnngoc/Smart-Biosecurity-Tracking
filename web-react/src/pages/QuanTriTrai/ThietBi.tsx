@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams , useOutletContext} from 'react-router-dom';
+import { useOutletContext} from 'react-router-dom';
 import { Cpu, Search, Plus, Wifi, Radio } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 

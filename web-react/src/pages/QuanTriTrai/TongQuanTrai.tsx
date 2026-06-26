@@ -1,4 +1,4 @@
-import { useParams , useOutletContext} from 'react-router-dom';
+import { useOutletContext} from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { ShieldAlert, Truck, Users, WifiOff, ArrowRight, BellRing, ClipboardCheck } from 'lucide-react';

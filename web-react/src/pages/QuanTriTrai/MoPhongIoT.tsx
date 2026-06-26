@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
-import { useParams , useOutletContext} from 'react-router-dom';
+import { useOutletContext} from 'react-router-dom';
 import { Cpu, Truck, Users, WifiOff, AlertTriangle, CheckCircle, Navigation } from 'lucide-react';
 
 export default function MoPhongIoT() {

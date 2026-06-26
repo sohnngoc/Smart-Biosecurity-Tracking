@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabaseClient';
 import { getMyVisitRequests, statusMap, visitSessionMap } from '../../lib/visitRequestLogic';
 import type { FarmVisitRequest } from '../../lib/visitRequestLogic';
 import { Plus, X, FileText } from 'lucide-react';
-import { useParams , useOutletContext} from 'react-router-dom';
+import { useOutletContext} from 'react-router-dom';
 
 export default function DangKyVaoTrai() {
   const { farmId } = useOutletContext<{ farmId: string }>();

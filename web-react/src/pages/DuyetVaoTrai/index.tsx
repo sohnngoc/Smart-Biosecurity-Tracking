@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { getPendingVetApprovalRequests, approveVisitRequest, rejectVisitRequest, requestMoreInfoVisitRequest, statusMap, visitSessionMap, swabResultMap } from '../../lib/visitRequestLogic';
 import type { FarmVisitRequest } from '../../lib/visitRequestLogic';
 import { CheckCircle, XCircle, AlertCircle, FileText, X } from 'lucide-react';
-import { useParams , useOutletContext} from 'react-router-dom';
+import { useOutletContext} from 'react-router-dom';
 
 export default function DuyetVaoTrai() {
   const { farmId } = useOutletContext<{ farmId: string }>();

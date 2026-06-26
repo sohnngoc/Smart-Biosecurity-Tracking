@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams , useOutletContext} from 'react-router-dom';
+import { useOutletContext} from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
 import { ShieldAlert, Play, RotateCcw, AlertTriangle, UserX, WifiOff, CalendarX, PackageX, CheckCircle } from 'lucide-react';
 

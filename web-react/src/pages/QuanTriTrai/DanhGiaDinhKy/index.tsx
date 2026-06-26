@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams , useOutletContext} from 'react-router-dom';
+import { useOutletContext} from 'react-router-dom';
 import { supabase } from '../../../lib/supabaseClient';
 import TongHopTab from './Tabs/TongHopTab';
 import FormTab from './Tabs/FormTab';

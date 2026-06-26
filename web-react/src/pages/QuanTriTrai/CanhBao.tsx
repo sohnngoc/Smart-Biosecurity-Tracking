@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
-import { useParams , useOutletContext} from 'react-router-dom';
+import { useOutletContext} from 'react-router-dom';
 import { ShieldAlert, Filter, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
 
