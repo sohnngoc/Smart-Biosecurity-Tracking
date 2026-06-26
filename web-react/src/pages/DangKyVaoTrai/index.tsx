@@ -208,36 +208,36 @@ export default function DangKyVaoTrai() {
             <div className="p-6 overflow-y-auto flex-1 space-y-6">
               {errorMsg && <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm font-medium">{errorMsg}</div>}
 
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Trại cần đến <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Trại cần đến <span className="text-red-500">*</span></label>
                   <select 
                     value={formData.farm_id || ''} 
                     onChange={e => setFormData({...formData, farm_id: e.target.value})}
                     disabled={!!farmId}
-                    className="w-full border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 text-gray-900 shadow-sm disabled:bg-gray-100 disabled:text-gray-500"
+                    className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 p-2.5 text-gray-900 dark:text-white shadow-sm transition-all duration-200 disabled:bg-gray-100 disabled:text-gray-500"
                   >
                     <option value="">-- Chọn trại --</option>
                     {farms.map(f => <option key={f.id} value={f.id}>{f.farm_name}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Họ tên người đi <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Họ tên người đi <span className="text-red-500">*</span></label>
                   <input 
                     type="text" 
                     placeholder="Nguyễn Văn A"
                     value={formData.requester_name || ''} 
                     onChange={e => setFormData({...formData, requester_name: e.target.value})}
-                    className="w-full border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 text-gray-900 shadow-sm"
+                    className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 p-2.5 text-gray-900 dark:text-white shadow-sm transition-all duration-200"
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Bộ phận</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Bộ phận</label>
                   <select 
                     value={formData.department || ''} 
                     onChange={e => setFormData({...formData, department: e.target.value})}
-                    className="w-full border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 text-gray-900 shadow-sm"
+                    className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 p-2.5 text-gray-900 dark:text-white shadow-sm transition-all duration-200"
                   >
                     <option value="Vet">Vet (Thú y)</option>
                     <option value="Production">Production (Sản xuất)</option>
@@ -248,31 +248,31 @@ export default function DangKyVaoTrai() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Chức vụ</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Chức vụ</label>
                   <input 
                     type="text" 
                     value={formData.position || ''} 
                     onChange={e => setFormData({...formData, position: e.target.value})}
-                    className="w-full border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 text-gray-900 shadow-sm"
+                    className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 p-2.5 text-gray-900 dark:text-white shadow-sm transition-all duration-200"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Ngày dự kiến <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Ngày dự kiến <span className="text-red-500">*</span></label>
                   <input 
                     type="date" 
                     min={new Date().toISOString().split('T')[0]}
                     value={formData.estimated_visit_date || ''} 
                     onChange={e => setFormData({...formData, estimated_visit_date: e.target.value})}
-                    className="w-full border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 text-gray-900 shadow-sm"
+                    className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 p-2.5 text-gray-900 dark:text-white shadow-sm transition-all duration-200"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Buổi</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Buổi</label>
                   <select 
                     value={formData.visit_session || 'full_day'} 
                     onChange={e => setFormData({...formData, visit_session: e.target.value as any})}
-                    className="w-full border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 text-gray-900 shadow-sm"
+                    className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 p-2.5 text-gray-900 dark:text-white shadow-sm transition-all duration-200"
                   >
                     <option value="morning">Sáng</option>
                     <option value="afternoon">Chiều</option>
@@ -281,11 +281,11 @@ export default function DangKyVaoTrai() {
                 </div>
 
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Mục đích vào trại <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Mục đích vào trại <span className="text-red-500">*</span></label>
                   <select 
                     value={formData.visit_purpose || ''} 
                     onChange={e => setFormData({...formData, visit_purpose: e.target.value})}
-                    className="w-full border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 text-gray-900 shadow-sm mb-2"
+                    className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 p-2.5 text-gray-900 dark:text-white shadow-sm transition-all duration-200 mb-2"
                   >
                     <option value="Kiểm tra thú y">Kiểm tra thú y</option>
                     <option value="Kiểm tra ATSH">Kiểm tra An toàn sinh học</option>
@@ -298,7 +298,7 @@ export default function DangKyVaoTrai() {
                       placeholder="Mô tả chi tiết mục đích..."
                       value={formData.visit_purpose_detail || ''}
                       onChange={e => setFormData({...formData, visit_purpose_detail: e.target.value})}
-                      className="w-full border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 text-gray-900 shadow-sm mt-2"
+                      className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 p-2.5 text-gray-900 dark:text-white shadow-sm transition-all duration-200 mt-2"
                       rows={2}
                     ></textarea>
                   )}
@@ -321,13 +321,13 @@ export default function DangKyVaoTrai() {
                 <div>
                   {formData.has_vehicle && (
                     <>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Biển số xe</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Biển số xe</label>
                       <input 
                         type="text" 
                         placeholder="Ví dụ: 51H-123.45"
                         value={formData.vehicle_plate_number || ''} 
                         onChange={e => setFormData({...formData, vehicle_plate_number: e.target.value})}
-                        className="w-full border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 text-gray-900 shadow-sm"
+                        className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 p-2.5 text-gray-900 dark:text-white shadow-sm transition-all duration-200"
                       />
                     </>
                   )}
@@ -335,7 +335,7 @@ export default function DangKyVaoTrai() {
 
                 <div className="col-span-2 border-t pt-4 mt-2">
                   <h3 className="text-sm font-bold text-gray-800 mb-4">Kết quả Swab / Xét nghiệm</h3>
-                  <div className="grid grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
                     <div>
                       <div className="flex items-center mb-3">
                         <input 
@@ -351,11 +351,11 @@ export default function DangKyVaoTrai() {
                       </div>
                       {formData.swab_available && (
                         <>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Kết quả</label>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Kết quả</label>
                           <select 
                             value={formData.swab_result || 'pending'} 
                             onChange={e => setFormData({...formData, swab_result: e.target.value as any})}
-                            className="w-full border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 text-gray-900 shadow-sm"
+                            className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 p-2.5 text-gray-900 dark:text-white shadow-sm transition-all duration-200"
                           >
                             <option value="pending">Đang chờ kết quả</option>
                             <option value="negative">Âm tính</option>
@@ -366,12 +366,12 @@ export default function DangKyVaoTrai() {
                     </div>
                     {formData.swab_available && (
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Ngày lấy mẫu</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Ngày lấy mẫu</label>
                         <input 
                           type="date" 
                           value={formData.swab_date || ''} 
                           onChange={e => setFormData({...formData, swab_date: e.target.value})}
-                          className="w-full border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 text-gray-900 shadow-sm"
+                          className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 p-2.5 text-gray-900 dark:text-white shadow-sm transition-all duration-200"
                         />
                       </div>
                     )}
@@ -379,11 +379,11 @@ export default function DangKyVaoTrai() {
                 </div>
 
                 <div className="col-span-2 border-t pt-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Ghi chú thêm</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Ghi chú thêm</label>
                   <textarea 
                     value={formData.requester_note || ''}
                     onChange={e => setFormData({...formData, requester_note: e.target.value})}
-                    className="w-full border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 text-gray-900 shadow-sm"
+                    className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 p-2.5 text-gray-900 dark:text-white shadow-sm transition-all duration-200"
                     rows={2}
                   ></textarea>
                 </div>
