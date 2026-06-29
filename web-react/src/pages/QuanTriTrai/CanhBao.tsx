@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { useOutletContext } from 'react-router-dom';
-import { ShieldAlert, CheckCircle, AlertTriangle, Info, Shield, Search } from 'lucide-react';
+import { ShieldAlert, CheckCircle, AlertTriangle, Shield } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Alert {

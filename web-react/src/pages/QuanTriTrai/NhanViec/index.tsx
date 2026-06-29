@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { supabase } from '../../../lib/supabaseClient';
 import { 
-  Briefcase, CheckCircle, Clock, PlayCircle, AlertTriangle, FileText, Upload, User
+  Briefcase, CheckCircle, Clock, PlayCircle, AlertTriangle, FileText, Upload
 } from 'lucide-react';
 
 interface Employee {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { Fingerprint, Search, Filter, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { Fingerprint, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 
 export const generateMockPersons = () => []; // Temporary stub to prevent TongQuanTrai crash

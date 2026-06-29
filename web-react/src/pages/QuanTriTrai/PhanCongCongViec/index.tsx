@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import { supabase } from '../../../lib/supabaseClient';
 import { 
   ClipboardList, Plus, Copy, Upload, Download, 
-  CheckCircle, AlertCircle, Save, Send, Calendar, User, UserCheck, ShieldAlert
+  CheckCircle, AlertCircle, Send, Calendar, ShieldAlert
 } from 'lucide-react';
 
 interface Employee {
