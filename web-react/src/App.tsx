@@ -6,8 +6,9 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import LayoutQuanTri from './pages/QuanTriTrai/Layout';
 import TongQuanTrai from './pages/QuanTriTrai/TongQuanTrai';
 import BanDoNoiBo from './pages/QuanTriTrai/BanDoNoiBo';
-import XeRaVao from './pages/QuanTriTrai/XeRaVao';
 import NguoiRaVao from './pages/QuanTriTrai/NguoiRaVao';
+import PhanCongCongViec from './pages/QuanTriTrai/PhanCongCongViec';
+import NhanViec from './pages/QuanTriTrai/NhanViec';
 import ThietBi from './pages/QuanTriTrai/ThietBi';
 import CanhBao from './pages/QuanTriTrai/CanhBao';
 import MoPhongRuiRo from './pages/QuanTriTrai/MoPhongRuiRo';
@@ -42,16 +43,17 @@ function App() {
           <Route index element={<Navigate to="tong-quan" replace />} />
           <Route path="tong-quan" element={<TongQuanTrai />} />
           <Route path="ban-do-noi-bo" element={<BanDoNoiBo />} />
-          <Route path="xe-ra-vao" element={<XeRaVao />} />
-          <Route path="nguoi-ra-vao" element={<NguoiRaVao />} />
-          <Route path="thiet-bi" element={<ThietBi />} />
-          <Route path="canh-bao" element={<CanhBao />} />
-          <Route path="mo-phong-rui-ro" element={<MoPhongRuiRo />} />
-          <Route path="mo-phong-iot" element={<MoPhongIoT />} />
-          <Route path="bao-cao-thong-minh" element={<BaoCaoThongMinh />} />
-          <Route path="danh-gia-dinh-ky" element={<DanhGiaDinhKy />} />
           <Route path="dang-ky-vao-trai" element={<DangKyVaoTrai />} />
           <Route path="duyet-vao-trai" element={<DuyetVaoTrai />} />
+          <Route path="nguoi-ra-vao" element={<NguoiRaVao />} />
+          <Route path="phan-cong-cong-viec" element={<PhanCongCongViec />} />
+          <Route path="nhan-viec" element={<NhanViec />} />
+          <Route path="thiet-bi" element={<ThietBi />} />
+          <Route path="canh-bao" element={<CanhBao />} />
+          <Route path="danh-gia-dinh-ky" element={<DanhGiaDinhKy />} />
+          <Route path="bao-cao-thong-minh" element={<BaoCaoThongMinh />} />
+          <Route path="mo-phong-iot" element={<MoPhongIoT />} />
+          <Route path="mo-phong-rui-ro" element={<MoPhongRuiRo />} />
         </Route>
       </Routes>
     </Router>

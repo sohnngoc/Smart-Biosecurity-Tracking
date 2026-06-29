@@ -1,0 +1,163 @@
+-- Seed Data: Finger Scan Demo (June 25-26, 2026)
+-- Date: 2026-06-29
+
+-- Get Farm 1 ID (assumes 'farm-001' exists from prior seed)
+DO $$
+DECLARE
+    v_farm_id UUID;
+    v_farrowing_zone UUID;
+    v_gestation_zone UUID;
+    v_isolation_zone UUID;
+    
+    v_barn_f1 UUID;
+    v_barn_f2 UUID;
+    v_barn_f3 UUID;
+    v_barn_g1 UUID;
+    v_barn_g2 UUID;
+    v_barn_iso1 UUID;
+    v_barn_iso2 UUID;
+    v_barn_gilt UUID;
+    
+    v_chk_gate UUID;
+    v_chk_shower_1 UUID;
+    v_chk_shower_2 UUID;
+    v_chk_shower_3 UUID;
+    v_chk_shower_4 UUID;
+    v_chk_shower_5 UUID;
+    
+    v_chk_med UUID;
+    v_chk_feed UUID;
+    
+    v_chk_f1_door1 UUID; v_chk_f1_door2 UUID;
+    v_chk_f2_door1 UUID; v_chk_f2_door2 UUID;
+    v_chk_f3_door1 UUID; v_chk_f3_door2 UUID;
+    v_chk_g1_door1 UUID; v_chk_g1_door2 UUID;
+    v_chk_g2_door1 UUID; v_chk_g2_door2 UUID;
+    v_chk_iso1_door1 UUID; v_chk_iso1_door2 UUID;
+    v_chk_iso2_door1 UUID; v_chk_iso2_door2 UUID;
+    v_chk_gilt_door1 UUID; v_chk_gilt_door2 UUID;
+    
+    v_emp_vet UUID;
+    v_emp_farrowing_1 UUID;
+    v_emp_farrowing_2 UUID;
+    v_emp_gestation UUID;
+    v_emp_isolation UUID;
+    v_emp_leave UUID;
+    v_emp_disinfection UUID;
+    
+    v_plan_25 UUID;
+    v_plan_26 UUID;
+    
+    v_shower_1_room UUID;
+    v_shower_2_room UUID;
+
+BEGIN
+    -- 1. Get Farm
+    SELECT id INTO v_farm_id FROM farms WHERE farm_code = 'farm-001' LIMIT 1;
+    IF NOT FOUND THEN RETURN; END IF;
+
+    -- 2. Zones
+    INSERT INTO farm_zones (farm_id, zone_name, zone_type, risk_level) VALUES
+    (v_farm_id, 'Chuồng đẻ', 'production', 'sensitive') RETURNING id INTO v_farrowing_zone;
+    INSERT INTO farm_zones (farm_id, zone_name, zone_type, risk_level) VALUES
+    (v_farm_id, 'Chuồng bầu', 'production', 'normal') RETURNING id INTO v_gestation_zone;
+    INSERT INTO farm_zones (farm_id, zone_name, zone_type, risk_level) VALUES
+    (v_farm_id, 'Khu cách ly', 'isolation', 'isolation') RETURNING id INTO v_isolation_zone;
+
+    -- 3. Barns
+    INSERT INTO barns (zone_id, barn_name, barn_type, capacity) VALUES (v_farrowing_zone, 'Chuồng Đẻ 1', 'farrowing', 200) RETURNING id INTO v_barn_f1;
+    INSERT INTO barns (zone_id, barn_name, barn_type, capacity) VALUES (v_farrowing_zone, 'Chuồng Đẻ 2', 'farrowing', 200) RETURNING id INTO v_barn_f2;
+    INSERT INTO barns (zone_id, barn_name, barn_type, capacity) VALUES (v_farrowing_zone, 'Chuồng Đẻ 3', 'farrowing', 200) RETURNING id INTO v_barn_f3;
+    INSERT INTO barns (zone_id, barn_name, barn_type, capacity) VALUES (v_gestation_zone, 'Chuồng Bầu 1', 'gestation', 300) RETURNING id INTO v_barn_g1;
+    INSERT INTO barns (zone_id, barn_name, barn_type, capacity) VALUES (v_gestation_zone, 'Chuồng Bầu 2', 'gestation', 300) RETURNING id INTO v_barn_g2;
+    INSERT INTO barns (zone_id, barn_name, barn_type, capacity) VALUES (v_isolation_zone, 'Cách Ly 1', 'isolation', 50) RETURNING id INTO v_barn_iso1;
+    INSERT INTO barns (zone_id, barn_name, barn_type, capacity) VALUES (v_isolation_zone, 'Cách Ly 2', 'isolation', 50) RETURNING id INTO v_barn_iso2;
+    INSERT INTO barns (zone_id, barn_name, barn_type, capacity) VALUES (v_isolation_zone, 'Hậu Bị Cách Ly', 'isolation', 100) RETURNING id INTO v_barn_gilt;
+
+    -- 4. Checkpoints (Gate, Showers, Warehouses)
+    INSERT INTO checkpoints (farm_id, checkpoint_name, checkpoint_type) VALUES (v_farm_id, 'Cổng Chính', 'gate') RETURNING id INTO v_chk_gate;
+    INSERT INTO checkpoints (farm_id, checkpoint_name, checkpoint_type) VALUES (v_farm_id, 'Phòng Tắm 1', 'shower') RETURNING id INTO v_chk_shower_1;
+    INSERT INTO checkpoints (farm_id, checkpoint_name, checkpoint_type) VALUES (v_farm_id, 'Phòng Tắm 2', 'shower') RETURNING id INTO v_chk_shower_2;
+    INSERT INTO checkpoints (farm_id, checkpoint_name, checkpoint_type) VALUES (v_farm_id, 'Phòng Tắm 3', 'shower') RETURNING id INTO v_chk_shower_3;
+    INSERT INTO checkpoints (farm_id, checkpoint_name, checkpoint_type) VALUES (v_farm_id, 'Phòng Tắm 4', 'shower') RETURNING id INTO v_chk_shower_4;
+    INSERT INTO checkpoints (farm_id, checkpoint_name, checkpoint_type) VALUES (v_farm_id, 'Phòng Tắm 5', 'shower') RETURNING id INTO v_chk_shower_5;
+    
+    INSERT INTO checkpoints (farm_id, checkpoint_name, checkpoint_type) VALUES (v_farm_id, 'Kho Thuốc', 'warehouse') RETURNING id INTO v_chk_med;
+    INSERT INTO checkpoints (farm_id, checkpoint_name, checkpoint_type) VALUES (v_farm_id, 'Kho Cám', 'warehouse') RETURNING id INTO v_chk_feed;
+
+    -- 5. Barn Door Checkpoints (2 per barn)
+    INSERT INTO checkpoints (farm_id, barn_id, checkpoint_name, checkpoint_type) VALUES (v_farm_id, v_barn_f1, 'Chuồng Đẻ 1 - Cửa 1', 'barn_door') RETURNING id INTO v_chk_f1_door1;
+    INSERT INTO checkpoints (farm_id, barn_id, checkpoint_name, checkpoint_type) VALUES (v_farm_id, v_barn_f1, 'Chuồng Đẻ 1 - Cửa 2', 'barn_door') RETURNING id INTO v_chk_f1_door2;
+    -- (Skip remaining door variables for brevity, but they will be generated by UI or just not strictly needed for this quick seed script)
+
+    -- Shower Rooms
+    INSERT INTO shower_rooms (checkpoint_id, room_name, max_capacity) VALUES (v_chk_shower_1, 'Phòng Tắm Nữ 1', 5) RETURNING id INTO v_shower_1_room;
+    INSERT INTO shower_rooms (checkpoint_id, room_name, max_capacity) VALUES (v_chk_shower_2, 'Phòng Tắm Nam 1', 5) RETURNING id INTO v_shower_2_room;
+
+    -- 6. Finger Scan Devices
+    INSERT INTO finger_scan_devices (farm_id, checkpoint_id, device_name, device_serial) VALUES (v_farm_id, v_chk_gate, 'FS-GATE-01', 'SN-GATE-001');
+    INSERT INTO finger_scan_devices (farm_id, checkpoint_id, device_name, device_serial) VALUES (v_farm_id, v_chk_shower_1, 'FS-SHW-01', 'SN-SHW-001');
+    INSERT INTO finger_scan_devices (farm_id, checkpoint_id, device_name, device_serial) VALUES (v_farm_id, v_chk_f1_door1, 'FS-F1-01', 'SN-F1-001');
+    INSERT INTO finger_scan_devices (farm_id, checkpoint_id, device_name, device_serial, status) VALUES (v_farm_id, v_chk_med, 'FS-MED-01', 'SN-MED-001', 'offline'); -- Demo offline device
+
+    -- 7. Employees
+    INSERT INTO employees (farm_id, employee_code, full_name, department, job_title) VALUES (v_farm_id, 'EMP001', 'Dr. Vet Nguyen', 'Technical', 'Head Vet') RETURNING id INTO v_emp_vet;
+    INSERT INTO employees (farm_id, employee_code, full_name, department, job_title) VALUES (v_farm_id, 'EMP002', 'Lý Lan', 'Production', 'Farrowing Worker') RETURNING id INTO v_emp_farrowing_1;
+    INSERT INTO employees (farm_id, employee_code, full_name, department, job_title) VALUES (v_farm_id, 'EMP003', 'Nguyễn Hùng', 'Production', 'Farrowing Worker') RETURNING id INTO v_emp_farrowing_2;
+    INSERT INTO employees (farm_id, employee_code, full_name, department, job_title) VALUES (v_farm_id, 'EMP004', 'Trần Tài', 'Production', 'Gestation Worker') RETURNING id INTO v_emp_gestation;
+    INSERT INTO employees (farm_id, employee_code, full_name, department, job_title) VALUES (v_farm_id, 'EMP005', 'Lê Bích', 'Production', 'Isolation Worker') RETURNING id INTO v_emp_isolation;
+    INSERT INTO employees (farm_id, employee_code, full_name, department, job_title) VALUES (v_farm_id, 'EMP006', 'Phạm Long (Nghỉ phép)', 'Production', 'General Worker') RETURNING id INTO v_emp_leave;
+    INSERT INTO employees (farm_id, employee_code, full_name, department, job_title) VALUES (v_farm_id, 'EMP007', 'Vũ Phong', 'Sanitation', 'Disinfection Worker') RETURNING id INTO v_emp_disinfection;
+
+    -- Add some leave
+    INSERT INTO leave_requests (employee_id, leave_date, leave_type, status) VALUES (v_emp_leave, '2026-06-25', 'vacation', 'approved');
+
+    -- 8. Daily Plans
+    INSERT INTO daily_work_plans (farm_id, plan_date, status) VALUES (v_farm_id, '2026-06-25', 'published') RETURNING id INTO v_plan_25;
+    INSERT INTO daily_work_plans (farm_id, plan_date, status) VALUES (v_farm_id, '2026-06-26', 'draft') RETURNING id INTO v_plan_26;
+
+    -- 9. Assign Tasks (June 25)
+    -- Farrowing 1 gets Farrowing Worker
+    INSERT INTO assigned_tasks (plan_id, employee_id, task_category, zone_id, barn_id, assigned_shower_id, task_description, biosecurity_level, expected_start, expected_end, status)
+    VALUES (v_plan_25, v_emp_farrowing_1, 'farrowing', v_farrowing_zone, v_barn_f1, v_shower_1_room, 'Chăm sóc heo sơ sinh chuồng đẻ 1', 'sensitive', '2026-06-25 06:00:00+07', '2026-06-25 15:00:00+07', 'in_progress');
+    
+    -- Vet gets Medicine Warehouse and roaming
+    INSERT INTO assigned_tasks (plan_id, employee_id, task_category, zone_id, checkpoint_id, assigned_shower_id, task_description, status)
+    VALUES (v_plan_25, v_emp_vet, 'vet', v_farrowing_zone, v_chk_med, v_shower_2_room, 'Khám sức khỏe tổng quát', 'in_progress');
+
+    -- Isolation Worker gets Isolation
+    INSERT INTO assigned_tasks (plan_id, employee_id, task_category, zone_id, barn_id, task_description, biosecurity_level, status)
+    VALUES (v_plan_25, v_emp_isolation, 'isolation', v_isolation_zone, v_barn_iso1, 'Chăm sóc heo nhập cách ly', 'isolation', 'assigned');
+
+    -- 10. Simulated Finger Scan Logs
+    -- Valid Scan (Lý Lan entering Gate)
+    INSERT INTO finger_scan_logs (farm_id, checkpoint_id, employee_id, decision, reason, risk_level, scan_time)
+    VALUES (v_farm_id, v_chk_gate, v_emp_farrowing_1, 'allow', 'Có lịch làm hôm nay', 'low', '2026-06-25 05:55:00+07');
+    
+    -- Valid Scan (Lý Lan passing correct shower)
+    INSERT INTO finger_scan_logs (farm_id, checkpoint_id, employee_id, decision, reason, risk_level, scan_time)
+    VALUES (v_farm_id, v_chk_shower_1, v_emp_farrowing_1, 'allow', 'Đúng phòng tắm', 'low', '2026-06-25 06:10:00+07');
+
+    -- Warning Scan (Gestation worker wrong shower)
+    INSERT INTO finger_scan_logs (farm_id, checkpoint_id, employee_id, decision, reason, risk_level, scan_time)
+    VALUES (v_farm_id, v_chk_shower_1, v_emp_gestation, 'warning', 'Sai phòng tắm được gán', 'medium', '2026-06-25 06:15:00+07');
+
+    -- Critical Violation (Isolation worker scanning into regular farrowing barn)
+    INSERT INTO finger_scan_logs (farm_id, checkpoint_id, employee_id, decision, reason, risk_level, scan_time)
+    VALUES (v_farm_id, v_chk_f1_door1, v_emp_isolation, 'deny', 'Nhân sự khu cách ly không được vào khu thường', 'critical', '2026-06-25 10:30:00+07');
+
+    -- High Violation (Employee on leave trying to enter gate)
+    INSERT INTO finger_scan_logs (farm_id, checkpoint_id, employee_id, decision, reason, risk_level, scan_time)
+    VALUES (v_farm_id, v_chk_gate, v_emp_leave, 'deny', 'Nhân sự đang nghỉ phép', 'high', '2026-06-25 07:00:00+07');
+
+    -- 11. Alerts generated from violations
+    INSERT INTO biosecurity_alerts (farm_id, alert_type, severity, employee_id, checkpoint_id, description, status)
+    VALUES (v_farm_id, 'isolation_breach', 'critical', v_emp_isolation, v_chk_f1_door1, 'Lê Bích (Khu cách ly) cố gắng quét vào Chuồng Đẻ 1', 'open');
+
+    INSERT INTO biosecurity_alerts (farm_id, alert_type, severity, employee_id, checkpoint_id, description, status)
+    VALUES (v_farm_id, 'leave_entry_attempt', 'high', v_emp_leave, v_chk_gate, 'Phạm Long đang nghỉ phép nhưng quét vân tay cổng chính', 'open');
+
+    INSERT INTO biosecurity_alerts (farm_id, alert_type, severity, employee_id, checkpoint_id, description, status)
+    VALUES (v_farm_id, 'wrong_shower', 'medium', v_emp_gestation, v_chk_shower_1, 'Trần Tài đi sai phòng tắm (được gán phòng 2, đi phòng 1)', 'resolved');
+
+END $$;

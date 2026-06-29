@@ -26,7 +26,7 @@ DECLARE
     v_plan_id UUID;
     v_req_id UUID;
 BEGIN
-    SELECT id INTO v_farm_id FROM farms LIMIT 1;
+    SELECT id INTO v_farm_id FROM farms ORDER BY farm_code ASC LIMIT 1;
     
     -- Clean up existing data for a fresh demo state
     DELETE FROM biosecurity_alerts WHERE farm_id = v_farm_id;

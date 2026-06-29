@@ -1,179 +1,121 @@
 import { useState, useEffect } from 'react';
-import { useOutletContext} from 'react-router-dom';
-import { Cpu, Search, Plus, Wifi, Radio } from 'lucide-react';
+import { useOutletContext } from 'react-router-dom';
+import { Fingerprint, Search, Wifi, WifiOff, Battery, Clock } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 
-const generateMockDevices = () => {
-  const devices = [
-    // GPS
-    { id: 'gps_base', device_type: 'GPS', device_name: 'GPS Base Station', location: 'Cổng chính', status: 'Hoạt động' },
-    
-    // RFID
-    { id: 'rfid_cong_xe', device_type: 'RFID', device_name: 'RFID Cổng Xe', location: 'Cổng chính', status: 'Hoạt động' },
-    { id: 'rfid_nha_bao_ve', device_type: 'RFID', device_name: 'RFID Nhà Bảo Vệ', location: 'Nhà bảo vệ', status: 'Hoạt động' },
-    { id: 'rfid_truoc_tam', device_type: 'RFID', device_name: 'RFID Trước Tắm', location: 'Khu tắm / Thay đồ', status: 'Hoạt động' },
-    { id: 'rfid_sau_tam', device_type: 'RFID', device_name: 'RFID Sau Tắm', location: 'Khu tắm / Thay đồ', status: 'Hoạt động' },
-    { id: 'rfid_kho', device_type: 'RFID', device_name: 'RFID Kho', location: 'Kho thuốc / Dụng cụ', status: 'Hoạt động' },
-    { id: 'rfid_heo_chet', device_type: 'RFID', device_name: 'RFID Xử Lý Heo Chết', location: 'Xử lý heo chết', status: 'Hoạt động' },
-    { id: 'rfid_kiem_ke', device_type: 'RFID', device_name: 'RFID Kiểm Kê', location: 'Phòng kiểm kê', status: 'Hoạt động' },
-    { id: 'rfid_cach_ly', device_type: 'RFID', device_name: 'RFID Cách Ly', location: 'Cách ly', status: 'Hoạt động' },
-    
-    // UWB
-    { id: 'uwb_sat_trung', device_type: 'UWB', device_name: 'UWB Sát Trùng Xe', location: 'Khu sát trùng xe', status: 'Hoạt động' },
-    { id: 'uwb_tam', device_type: 'UWB', device_name: 'UWB Khu Tắm', location: 'Khu tắm / Thay đồ', status: 'Hoạt động' },
-    { id: 'uwb_hanh_lang', device_type: 'UWB', device_name: 'UWB Hành Lang', location: 'Hành lang chính', status: 'Hoạt động' },
-    { id: 'uwb_xuat_nhap', device_type: 'UWB', device_name: 'UWB Xuất Nhập Heo', location: 'Khu xuất nhập heo', status: 'Hoạt động' },
-    { id: 'uwb_heo_chet', device_type: 'UWB', device_name: 'UWB Xử Lý Heo Chết', location: 'Xử lý heo chết', status: 'Hoạt động' },
-    { id: 'uwb_cach_ly', device_type: 'UWB', device_name: 'UWB Cách Ly', location: 'Cách ly', status: 'Hoạt động' },
-  ];
+export const generateMockDevices = () => []; // Stub for TongQuanTrai
 
-  const barnConfigs = [
-    { prefix: 'de3', name: 'Chuồng Đẻ 3' },
-    { prefix: 'de2', name: 'Chuồng Đẻ 2' },
-    { prefix: 'de1', name: 'Chuồng Đẻ 1' },
-    { prefix: 'bau2', name: 'Chuồng Bầu 2' },
-    { prefix: 'bau1', name: 'Chuồng Bầu 1' },
-    { prefix: 'duc', name: 'Chuồng Đực' },
-  ];
-
-  barnConfigs.forEach(b => {
-    devices.push({ id: `rfid_${b.prefix}`, device_type: 'RFID', device_name: `RFID Cửa ${b.name}`, location: b.name, status: 'Hoạt động' });
-    devices.push({ id: `uwb_${b.prefix}_1`, device_type: 'UWB', device_name: `UWB Góc 1`, location: b.name, status: 'Hoạt động' });
-    devices.push({ id: `uwb_${b.prefix}_2`, device_type: 'UWB', device_name: `UWB Góc 2`, location: b.name, status: 'Hoạt động' });
-    devices.push({ id: `uwb_${b.prefix}_3`, device_type: 'UWB', device_name: `UWB Góc 3`, location: b.name, status: 'Hoạt động' });
-    devices.push({ id: `uwb_${b.prefix}_4`, device_type: 'UWB', device_name: `UWB Góc 4`, location: b.name, status: 'Hoạt động' });
-  });
-
-  return devices;
-};
+interface Device {
+  id: string;
+  device_name: string;
+  device_serial: string;
+  status: string;
+  last_seen: string;
+  firmware_version: string;
+  battery_level: number | null;
+  checkpoints: { checkpoint_name: string; checkpoint_type: string };
+}
 
 export default function ThietBi() {
   const { farmId } = useOutletContext<{ farmId: string }>();
-  const [devices, setDevices] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [devices, setDevices] = useState<Device[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    let subscription: ReturnType<typeof supabase.channel>;
-
-    const fetchDevices = async () => {
-      setLoading(true);
-      // Kiểm tra xem có cảnh báo S3 (mất kết nối thiết bị) đang active không
-      let hasAlertS3 = false;
-      if (farmId) {
-        const { data } = await supabase
-          .from('alerts')
-          .select('alert_code')
-          .eq('farm_id', farmId)
-          .eq('status', 'Chưa xử lý')
-          .like('alert_code', '%-S3-%');
-        
-        hasAlertS3 = (data && data.length > 0) || false;
-      }
-
-      // Khởi tạo thiết bị mock
-      let mockDevices = generateMockDevices();
-      
-      // Nếu có cảnh báo S3, cập nhật trạng thái mất tín hiệu cho uwb_cach_ly và uwb_de3_1
-      if (hasAlertS3) {
-        mockDevices = mockDevices.map(d => {
-          if (d.id === 'uwb_cach_ly' || d.id === 'uwb_de3_1') {
-            return { ...d, status: 'Mất kết nối' };
-          }
-          return d;
-        });
-        
-        // Đẩy 2 thiết bị lỗi lên đầu danh sách để dễ thấy
-        const errorDevices = mockDevices.filter(d => d.status === 'Mất kết nối');
-        const normalDevices = mockDevices.filter(d => d.status !== 'Mất kết nối');
-        mockDevices = [...errorDevices, ...normalDevices];
-      }
-      
-      setDevices(mockDevices);
-      setLoading(false);
-    };
-
-    fetchDevices();
-
-    // Lắng nghe realtime các thay đổi của bảng alerts
-    if (farmId) {
-      subscription = supabase
-        .channel(`public:alerts_devices`)
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'alerts', filter: `farm_id=eq.${farmId}` },
-          () => fetchDevices()
-        )
-        .subscribe();
-    }
-
-    return () => {
-      if (subscription) supabase.removeChannel(subscription);
-    };
+    if (farmId) fetchDevices();
   }, [farmId]);
 
+  const fetchDevices = async () => {
+    const { data } = await supabase
+      .from('finger_scan_devices')
+      .select(`
+        *,
+        checkpoints (checkpoint_name, checkpoint_type)
+      `)
+      .eq('farm_id', farmId)
+      .order('device_name');
+
+    if (data) setDevices(data as any);
+  };
+
+  const filteredDevices = devices.filter(d => 
+    d.device_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    d.device_serial.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    d.checkpoints?.checkpoint_name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-        <div className="flex items-center text-gray-700">
-          <Cpu className="mr-2 text-blue-600" />
-          <h2 className="text-lg font-bold">Quản lý Thiết bị IoT</h2>
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center">
+            <Fingerprint className="mr-3 text-blue-600 dark:text-blue-400" size={28} />
+            Quản lý thiết bị Finger Scan
+          </h2>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Trạng thái kết nối của các thiết bị đọc vân tay</p>
         </div>
-        <div className="flex space-x-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-            <input type="text" placeholder="Tìm kiếm thiết bị..." className="pl-10 pr-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-          </div>
-          <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center">
-            <Plus size={18} className="mr-1" /> Thêm thiết bị
-          </button>
+        <div className="relative w-full sm:w-64">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+          <input 
+            type="text"
+            placeholder="Tìm kiếm thiết bị..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 dark:text-white"
+          />
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-gray-50 border-b border-gray-200 text-sm text-gray-600">
-                <th className="p-4 font-semibold">Tên Thiết bị</th>
-                <th className="p-4 font-semibold">Loại sóng</th>
-                <th className="p-4 font-semibold">Vị trí lắp đặt</th>
-                <th className="p-4 font-semibold">Trạng thái</th>
-              </tr>
-            </thead>
-            <tbody className="text-sm">
-              {loading ? (
-                <tr><td colSpan={4} className="p-4 text-center text-gray-500">Đang tải dữ liệu...</td></tr>
-              ) : devices.length === 0 ? (
-                <tr><td colSpan={4} className="p-4 text-center text-gray-500">Không có dữ liệu thiết bị</td></tr>
-              ) : (
-                devices.map((d) => (
-                  <tr key={d.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="p-4 font-medium text-gray-900">{d.device_name}<br/><span className="text-xs text-gray-400">{d.id}</span></td>
-                    <td className="p-4">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center w-max ${
-                        d.device_type === 'RFID' ? 'bg-blue-100 text-blue-700' : 
-                        d.device_type === 'UWB' ? 'bg-purple-100 text-purple-700' : 
-                        'bg-orange-100 text-orange-700'
-                      }`}>
-                        {d.device_type === 'RFID' && <Radio size={12} className="mr-1" />}
-                        {d.device_type === 'UWB' && <Wifi size={12} className="mr-1" />}
-                        {d.device_type}
-                      </span>
-                    </td>
-                    <td className="p-4 text-gray-600">{d.location}</td>
-                    <td className="p-4">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        d.status === 'Mất kết nối' ? 'bg-red-100 text-red-700 animate-pulse font-bold' : 'bg-green-100 text-green-700'
-                      }`}>
-                        {d.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {filteredDevices.map(device => (
+          <div key={device.id} className="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition">
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex items-center">
+                <div className={`p-2 rounded-lg mr-3 ${device.status === 'online' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                  <Fingerprint size={24} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-800 dark:text-white">{device.device_name}</h3>
+                  <p className="text-xs text-gray-500">{device.device_serial}</p>
+                </div>
+              </div>
+              <span className={`px-2 py-1 rounded-full text-xs font-bold flex items-center ${
+                device.status === 'online' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+              }`}>
+                {device.status === 'online' ? <Wifi size={12} className="mr-1"/> : <WifiOff size={12} className="mr-1"/>}
+                {device.status === 'online' ? 'Online' : 'Offline'}
+              </span>
+            </div>
+
+            <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+              <div className="flex justify-between">
+                <span>Vị trí:</span>
+                <span className="font-medium text-gray-800 dark:text-gray-200">{device.checkpoints?.checkpoint_name || 'Chưa gắn'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Trạm (Type):</span>
+                <span className="font-medium text-gray-800 dark:text-gray-200 uppercase">{device.checkpoints?.checkpoint_type}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span>Hoạt động cuối:</span>
+                <span className="flex items-center text-xs"><Clock size={12} className="mr-1"/> {new Date(device.last_seen).toLocaleTimeString('vi-VN')}</span>
+              </div>
+              <div className="flex justify-between items-center pt-2 border-t dark:border-gray-700 mt-2">
+                <span className="text-xs">FW: {device.firmware_version || '1.0.0'}</span>
+                {device.battery_level !== null && (
+                  <span className="flex items-center text-xs text-green-600">
+                    <Battery size={14} className="mr-1" /> {device.battery_level}%
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+        {filteredDevices.length === 0 && (
+          <div className="col-span-full py-10 text-center text-gray-500">
+            Không tìm thấy thiết bị nào.
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,57 +1,27 @@
 import { useState } from 'react';
 import { useOutletContext} from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
-import { ShieldAlert, Play, RotateCcw, AlertTriangle, UserX, WifiOff, CalendarX, PackageX, CheckCircle } from 'lucide-react';
+import { ShieldAlert, Play, RotateCcw, AlertTriangle, UserX, CheckCircle } from 'lucide-react';
 
 const SCENARIOS = [
   {
     id: 'S1',
-    code: 'VEHICLE_DISINFECTION_FAILED',
-    title: 'S1: Xe chưa sát trùng vào khu nội bộ',
-    desc: 'Hệ thống nhận diện xe đi qua cổng nhưng không ghi nhận hoàn tất sát trùng. Xe tiếp tục di chuyển vào khu vực chuồng nuôi.',
-    riskLevel: 'Critical',
-    riskPoints: 30,
-    icon: <AlertTriangle className="text-red-500" size={24} />,
-    color: 'border-red-500'
-  },
-  {
-    id: 'S2',
-    code: 'PERSONNEL_CLEAN_ZONE_VIOLATION',
-    title: 'S2: Người vào khu sạch sai quy trình',
-    desc: 'Nhân viên/Khách đi vào khu sạch nhưng chưa hoàn tất quy trình tắm, thay đồ sát trùng.',
+    code: 'WRONG_ZONE_LIVING_AREA',
+    title: 'S1: Vào khu sinh hoạt sai quy trình',
+    desc: 'Nhân viên A sau khi bấm vân tay ở cổng, thay vì đi vào khu tắm sát trùng lại tiếp tục bấm vân tay đi thẳng vào khu sinh hoạt.',
     riskLevel: 'Critical',
     riskPoints: 30,
     icon: <UserX className="text-red-500" size={24} />,
     color: 'border-red-500'
   },
   {
-    id: 'S3',
-    code: 'DEVICE_OFFLINE_HIGH_RISK',
-    title: 'S3: Mất tín hiệu thiết bị vùng nhạy cảm',
-    desc: 'Thiết bị UWB/Camera trong chuồng nái/cách ly bị offline quá thời gian cho phép.',
-    riskLevel: 'High',
-    riskPoints: 20,
-    icon: <WifiOff className="text-orange-500" size={24} />,
-    color: 'border-orange-500'
-  },
-  {
-    id: 'S4',
-    code: 'BARN_CLEANING_OVERDUE',
-    title: 'S4: Chuồng quá hạn vệ sinh',
-    desc: 'Chuồng heo nái đã đến kỳ vệ sinh nhưng hệ thống chưa ghi nhận cleaning log hoặc chưa đủ số lần.',
-    riskLevel: 'High',
-    riskPoints: 20,
-    icon: <CalendarX className="text-orange-500" size={24} />,
-    color: 'border-orange-500'
-  },
-  {
-    id: 'S5',
-    code: 'SUPPLY_UNAPPROVED_ENTRY',
-    title: 'S5: Vật tư vào khu nuôi chưa phê duyệt',
-    desc: 'Lô vật tư, dụng cụ đi vào khu sạch/chuồng nuôi khi chưa được xác nhận kiểm tra, sát trùng.',
+    id: 'S2',
+    code: 'WRONG_BARN_ENTRY',
+    title: 'S2: Đi sai chuồng làm việc (Cross-contamination)',
+    desc: 'Nhân viên được phân công làm việc ở chuồng đẻ 1 nhưng thực tế lại sang chuồng bầu bấm vân tay, gây nguy cơ lây nhiễm chéo.',
     riskLevel: 'Critical',
-    riskPoints: 25,
-    icon: <PackageX className="text-red-500" size={24} />,
+    riskPoints: 40,
+    icon: <AlertTriangle className="text-red-500" size={24} />,
     color: 'border-red-500'
   }
 ];
@@ -86,51 +56,47 @@ export default function MoPhongRuiRo() {
 
       // 2. Tạo Alert
       let recommendedAction = '';
-      if (scenario.id === 'S1') recommendedAction = 'Dừng xe — yêu cầu quay lại khu sát trùng — xác nhận lại sau sát trùng';
-      else if (scenario.id === 'S2') recommendedAction = 'Yêu cầu rời khỏi khu sạch — thực hiện lại quy trình tắm/sát trùng — ghi nhận biên bản';
-      else if (scenario.id === 'S3') recommendedAction = 'Kiểm tra nguồn điện thiết bị - Cử kỹ thuật viên kiểm tra phần cứng';
-      else if (scenario.id === 'S4') recommendedAction = 'Phân công lại tác vụ vệ sinh - Thực hiện vệ sinh khẩn cấp';
-      else if (scenario.id === 'S5') recommendedAction = 'Cô lập lô vật tư — kiểm tra — sát trùng — phê duyệt lại';
+      if (scenario.id === 'S1') recommendedAction = 'Chặn cửa khu sinh hoạt — Yêu cầu nhân viên A quay lại thực hiện quy trình tắm sát trùng — Ghi log vi phạm';
+      else if (scenario.id === 'S2') recommendedAction = 'Phát cảnh báo loa tại chuồng bầu — Yêu cầu nhân viên B rời khỏi khu vực lập tức — Phun sát trùng khẩn cấp lối đi';
 
-      const { error: alertError } = await supabase.from('alerts').insert({
+      const alertMsg = scenario.id === 'S1' 
+        ? 'Nhân viên A bỏ qua bước tắm sát trùng và cố gắng xâm nhập vào khu sinh hoạt!'
+        : 'Nhân viên B (Chuồng đẻ 1) đi sai tuyến đường và cố gắng mở cửa Chuồng Bầu!';
+
+      // Get an employee and checkpoint for mock logs
+      const { data: employees } = await supabase.from('employees').select('id').limit(2);
+      const empId = scenario.id === 'S1' ? employees?.[0]?.id : employees?.[1]?.id;
+      
+      const chkKeyword = scenario.id === 'S1' ? 'Tắm' : 'Bầu'; // Since we might not have a Sinh Hoat checkpoint, we use Tắm or Bầu to trigger alerts in map based on location, but the alert text says Sinh hoat. Wait, we can fetch any checkpoint to satisfy FK.
+      const { data: checkpoints } = await supabase.from('checkpoints').select('id').ilike('checkpoint_name', `%${chkKeyword}%`).limit(1);
+      const chkId = checkpoints?.[0]?.id;
+
+      let logId = null;
+      if (empId && chkId) {
+        const { data: logData, error: logError } = await supabase.from('finger_scan_logs').insert({
+          farm_id: farmId,
+          checkpoint_id: chkId,
+          employee_id: empId,
+          decision: 'deny',
+          reason: scenario.id === 'S1' ? 'Sai quy trình (Bỏ qua tắm)' : 'Sai khu vực làm việc (Chuồng Bầu)',
+          risk_level: 'critical'
+        }).select('id').single();
+        if (!logError && logData) logId = logData.id;
+      }
+
+      const { error: alertError } = await supabase.from('biosecurity_alerts').insert({
         farm_id: farmId,
-        alert_code: `SIM-${scenario.id}-${Date.now().toString().slice(-4)}`,
-        alert_type: 'Mô phỏng rủi ro ATSH',
-        severity: scenario.riskLevel === 'Critical' ? 'Nghiêm trọng' : 'Cao',
-        message: `${scenario.desc}\n(Hành động: ${recommendedAction})`,
-        status: 'Chưa xử lý'
+        alert_type: scenario.id === 'S1' ? 'unauthorized_access' : 'wrong_barn',
+        severity: 'critical',
+        description: alertMsg + `\n(Hành động: ${recommendedAction})`,
+        status: 'open',
+        employee_id: empId || null,
+        checkpoint_id: chkId || null,
+        scan_log_id: logId
       });
 
       if (alertError) {
         throw alertError;
-      }
-
-      // 3. Tự động ghi log vào các bảng Báo Cáo
-      const runId = `RUN-${Date.now()}`;
-      
-      if (scenario.id === 'S4') {
-        // Tình huống S4: Tạo log vệ sinh chuồng quá hạn
-        const { error: s4Error } = await supabase.from('cleaning_tasks').insert([
-          {
-            farm_id: farmId,
-            target_zone: 'Chuồng Nái 1',
-            task_name: 'Vệ sinh định kỳ (Auto-generated by S4)',
-            assigned_to: 'Nhân viên B',
-            scheduled_time: new Date(Date.now() - 3600000 * 5).toISOString(), // Quá hạn 5 tiếng
-            status: 'Overdue',
-            scenario_run_id: runId
-          },
-          {
-            farm_id: farmId,
-            target_zone: 'Chuồng Đẻ 3',
-            task_name: 'Sát trùng lối đi (Auto-generated by S4)',
-            assigned_to: 'Nhân viên C',
-            scheduled_time: new Date(Date.now() + 3600000 * 2).toISOString(), // Sắp tới
-            status: 'Pending',
-            scenario_run_id: runId
-          }
-        ]);
-        if (s4Error) console.error('Lỗi khi tạo mock cleaning_tasks:', s4Error);
       }
 
       showToast(`Chạy thành công: ${scenario.title}`, 'success');

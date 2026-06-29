@@ -1,159 +1,140 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
-import { useOutletContext} from 'react-router-dom';
-import { ShieldAlert, Filter, CheckCircle } from 'lucide-react';
+import { useOutletContext } from 'react-router-dom';
+import { ShieldAlert, CheckCircle, AlertTriangle, Info, Shield, Search } from 'lucide-react';
 import { format } from 'date-fns';
+
+interface Alert {
+  id: string;
+  created_at: string;
+  alert_type: string;
+  severity: string;
+  description: string;
+  status: string;
+  employees: { full_name: string; employee_code: string };
+  checkpoints: { checkpoint_name: string };
+}
 
 export default function CanhBao() {
   const { farmId } = useOutletContext<{ farmId: string }>();
-  const [alerts, setAlerts] = useState<any[]>([]);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('open'); // open, all, resolved
 
   const fetchAlerts = async () => {
     if (!farmId) return;
-    const { data } = await supabase.from('alerts').select('*').eq('farm_id', farmId).order('created_at', { ascending: false });
-    if (data) setAlerts(data);
+    let query = supabase
+      .from('biosecurity_alerts')
+      .select(`
+        id, created_at, alert_type, severity, description, status,
+        employees (full_name, employee_code),
+        checkpoints (checkpoint_name)
+      `)
+      .eq('farm_id', farmId)
+      .order('created_at', { ascending: false });
+      
+    if (filter !== 'all') {
+      query = query.eq('status', filter);
+    }
+
+    const { data } = await query;
+    if (data) setAlerts(data as any);
     setLoading(false);
   };
 
   useEffect(() => {
     fetchAlerts();
-
-    const channel = supabase.channel('alerts_updates')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'alerts', filter: `farm_id=eq.${farmId}` }, () => {
+    const channel = supabase.channel('biosecurity_alerts_updates')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'biosecurity_alerts', filter: `farm_id=eq.${farmId}` }, () => {
         fetchAlerts();
       })
       .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [farmId, filter]);
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [farmId]);
-
-  const handleResolve = async (id: string, severity: string) => {
-    // Cập nhật state local để UI phản hồi tức thì
-    setAlerts(prev => prev.map(a => a.id === id ? { ...a, status: 'Đã xử lý' } : a));
-    
-    // Cập nhật trạng thái trong CSDL
-    const { error } = await supabase
-      .from('alerts')
-      .update({ status: 'Đã xử lý' })
-      .eq('id', id);
-      
-    if (error) {
-      console.error('Lỗi khi cập nhật trạng thái:', error);
-      // Hoàn tác nếu lỗi
-      setAlerts(prev => prev.map(a => a.id === id ? { ...a, status: 'Chưa xử lý' } : a));
-    } else {
-      // Tính điểm rủi ro cần giảm
-      let scoreReduction = 10;
-      if (severity === 'Nghiêm trọng') scoreReduction = 30;
-      else if (severity === 'Cao') scoreReduction = 20;
-
-      if (farmId) {
-        try {
-          const { data: farm } = await supabase.from('farms').select('active_alert_count, risk_score').eq('id', farmId).single();
-          if (farm) {
-            let newScore = (farm.risk_score || 0) - scoreReduction;
-            if (newScore < 0) newScore = 0;
-
-            await supabase.from('farms').update({ 
-              active_alert_count: farm.active_alert_count > 0 ? farm.active_alert_count - 1 : 0,
-              risk_score: newScore
-            }).eq('id', farmId);
-          }
-        } catch (e) {
-          console.warn('Không thể cập nhật farms.risk_score trên DB, có thể do thiếu cột.', e);
-        }
-      }
-      
-      // Đồng bộ tắt IoT Zone khi xử lý cảnh báo
-      localStorage.removeItem('iot_selected_zone');
-      window.dispatchEvent(new Event('iot_zone_changed'));
-    }
+  const resolveAlert = async (id: string) => {
+    await supabase.from('biosecurity_alerts').update({ status: 'resolved', resolved_at: new Date().toISOString() }).eq('id', id);
+    fetchAlerts();
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-        <div className="flex items-center text-gray-700">
-          <ShieldAlert className="mr-2 text-red-600" />
-          <h2 className="text-lg font-bold">Quản lý cảnh báo</h2>
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center">
+            <ShieldAlert className="mr-3 text-red-600 dark:text-red-400" size={28} />
+            Cảnh báo An toàn sinh học
+          </h2>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Quản lý các vi phạm và rủi ro lây nhiễm từ hệ thống Finger Scan</p>
         </div>
-        <div className="flex space-x-3">
-          <button className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 flex items-center">
-            <Filter size={18} className="mr-1" /> Lọc dữ liệu
-          </button>
+        <div className="flex space-x-2 bg-gray-100 dark:bg-gray-700 p-1 rounded-xl">
+          <button onClick={() => setFilter('open')} className={`px-4 py-2 rounded-lg text-sm font-medium ${filter === 'open' ? 'bg-white dark:bg-gray-800 shadow-sm text-gray-800 dark:text-white' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}>Cần xử lý</button>
+          <button onClick={() => setFilter('resolved')} className={`px-4 py-2 rounded-lg text-sm font-medium ${filter === 'resolved' ? 'bg-white dark:bg-gray-800 shadow-sm text-gray-800 dark:text-white' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}>Đã xử lý</button>
+          <button onClick={() => setFilter('all')} className={`px-4 py-2 rounded-lg text-sm font-medium ${filter === 'all' ? 'bg-white dark:bg-gray-800 shadow-sm text-gray-800 dark:text-white' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}>Tất cả</button>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-gray-50 border-b border-gray-200 text-sm text-gray-600">
-                <th className="p-4 font-semibold">Mã</th>
-                <th className="p-4 font-semibold">Thời gian</th>
-                <th className="p-4 font-semibold">Loại vi phạm</th>
-                <th className="p-4 font-semibold">Mức độ</th>
-                <th className="p-4 font-semibold">Nội dung chi tiết</th>
-                <th className="p-4 font-semibold">Trạng thái</th>
-                <th className="p-4 font-semibold text-center">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody className="text-sm">
-              {loading ? (
-                <tr><td colSpan={7} className="p-4 text-center text-gray-500">Đang tải dữ liệu...</td></tr>
-              ) : alerts.length === 0 ? (
-                <tr><td colSpan={7} className="p-4 text-center text-gray-500">Không có dữ liệu cảnh báo</td></tr>
-              ) : (
-                alerts.map((a) => (
-                  <tr key={a.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="p-4 font-medium text-gray-900">{a.alert_code}</td>
-                    <td className="p-4 text-gray-600">{format(new Date(a.created_at), 'dd/MM/yyyy HH:mm')}</td>
-                    <td className="p-4 text-gray-600">{a.alert_type}</td>
-                    <td className="p-4">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        a.severity === 'Nghiêm trọng' ? 'bg-red-600 text-white' : 
-                        a.severity === 'Cao' ? 'bg-red-100 text-red-700' :
-                        a.severity === 'Trung bình' ? 'bg-orange-100 text-orange-700' :
-                        'bg-yellow-100 text-yellow-700'
-                      }`}>
-                        {a.severity}
-                      </span>
-                    </td>
-                    <td className="p-4 text-gray-600 max-w-xs">
-                      <div className="font-medium truncate mb-1" title={a.message}>{a.message}</div>
-                      {a.recommended_action && (
-                        <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded truncate" title={a.recommended_action}>
-                          Hành động: {a.recommended_action}
-                        </div>
-                      )}
-                    </td>
-                    <td className="p-4">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        a.status === 'Chưa xử lý' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
-                      }`}>
-                        {a.status}
-                      </span>
-                    </td>
-                    <td className="p-4 text-center">
-                      {a.status === 'Chưa xử lý' && (
-                        <button 
-                          onClick={() => handleResolve(a.id, a.severity)}
-                          className="text-green-600 hover:text-green-800 flex items-center justify-center w-full transition-transform hover:scale-110" 
-                          title="Xác nhận đã xử lý"
-                        >
-                          <CheckCircle size={18} />
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+      <div className="space-y-4">
+        {loading ? (
+          <div className="p-8 text-center text-gray-500">Đang tải cảnh báo...</div>
+        ) : alerts.length === 0 ? (
+          <div className="bg-green-50 dark:bg-green-900/20 p-8 text-center rounded-2xl border border-green-200 dark:border-green-800 flex flex-col items-center">
+            <Shield className="text-green-500 mb-3" size={48} />
+            <h3 className="text-lg font-bold text-green-700 dark:text-green-400 mb-1">Tuyệt vời! Hệ thống an toàn</h3>
+            <p className="text-green-600 dark:text-green-500">Không có cảnh báo nào trong trạng thái này.</p>
+          </div>
+        ) : (
+          alerts.map(alert => (
+            <div key={alert.id} className={`p-5 rounded-2xl border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all hover:shadow-md ${
+              alert.status === 'resolved' ? 'bg-gray-50 border-gray-200 dark:bg-gray-800/50 dark:border-gray-700' :
+              alert.severity === 'critical' ? 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800/50' : 
+              alert.severity === 'high' ? 'bg-orange-50 border-orange-200 dark:bg-orange-900/20 dark:border-orange-800/50' : 
+              'bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800/50'
+            }`}>
+              <div className="flex items-start">
+                <div className={`p-3 rounded-full mr-4 hidden sm:block ${
+                  alert.status === 'resolved' ? 'bg-gray-200 text-gray-500 dark:bg-gray-700' :
+                  alert.severity === 'critical' ? 'bg-red-200 text-red-600' : 
+                  alert.severity === 'high' ? 'bg-orange-200 text-orange-600' : 'bg-yellow-200 text-yellow-600'
+                }`}>
+                  {alert.status === 'resolved' ? <CheckCircle size={24} /> : <AlertTriangle size={24} />}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${
+                       alert.status === 'resolved' ? 'bg-gray-200 text-gray-600' :
+                       alert.severity === 'critical' ? 'bg-red-600 text-white' : 
+                       alert.severity === 'high' ? 'bg-orange-500 text-white' : 'bg-yellow-500 text-white'
+                    }`}>
+                      {alert.severity}
+                    </span>
+                    <span className="text-sm font-medium text-gray-500">
+                      {format(new Date(alert.created_at), 'dd/MM/yyyy HH:mm:ss')}
+                    </span>
+                  </div>
+                  <h3 className={`font-bold text-lg mb-1 ${alert.status === 'resolved' ? 'text-gray-600 dark:text-gray-400 line-through' : 'text-gray-800 dark:text-white'}`}>
+                    {alert.description}
+                  </h3>
+                  <div className="text-sm text-gray-600 dark:text-gray-400 flex flex-wrap gap-x-4 gap-y-1">
+                    {alert.employees && <span>👤 Nhân sự: <span className="font-medium">{alert.employees.full_name}</span></span>}
+                    {alert.checkpoints && <span>📍 Vị trí: <span className="font-medium">{alert.checkpoints.checkpoint_name}</span></span>}
+                  </div>
+                </div>
+              </div>
+              <div className="w-full sm:w-auto flex justify-end">
+                {alert.status === 'open' ? (
+                  <button onClick={() => resolveAlert(alert.id)} className="w-full sm:w-auto flex justify-center items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 font-medium text-gray-700 dark:text-gray-200 transition">
+                    <CheckCircle size={18} className="mr-2 text-green-500" /> Đánh dấu đã xử lý
+                  </button>
+                ) : (
+                  <span className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-lg text-sm font-medium flex items-center">
+                    <CheckCircle size={16} className="mr-1" /> Đã xử lý
+                  </span>
+                )}
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

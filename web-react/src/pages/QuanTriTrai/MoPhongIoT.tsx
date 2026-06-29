@@ -1,202 +1,160 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
-import { useOutletContext} from 'react-router-dom';
-import { Cpu, Truck, Users, WifiOff, AlertTriangle, CheckCircle, Navigation } from 'lucide-react';
+import { useOutletContext } from 'react-router-dom';
+import { Cpu, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
 
 export default function MoPhongIoT() {
   const { farmId } = useOutletContext<{ farmId: string }>();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
-  const [selectedZone, setSelectedZone] = useState(localStorage.getItem('iot_selected_zone') || '');
+
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [checkpoints, setCheckpoints] = useState<any[]>([]);
 
   useEffect(() => {
-    const handleZoneChange = () => {
-      setSelectedZone(localStorage.getItem('iot_selected_zone') || '');
-    };
-    window.addEventListener('iot_zone_changed', handleZoneChange);
-    window.addEventListener('storage', handleZoneChange);
-    return () => {
-      window.removeEventListener('iot_zone_changed', handleZoneChange);
-      window.removeEventListener('storage', handleZoneChange);
-    };
-  }, []);
-
-  const handleZoneChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const zone = e.target.value;
-    setSelectedZone(zone);
-    if (zone) {
-      localStorage.setItem('iot_selected_zone', zone);
-    } else {
-      localStorage.removeItem('iot_selected_zone');
+    if (farmId) {
+      fetchData();
     }
-    window.dispatchEvent(new Event('iot_zone_changed'));
+  }, [farmId]);
+
+  const fetchData = async () => {
+    const { data: emps } = await supabase.from('employees').select('*').eq('farm_id', farmId);
+    const { data: chks } = await supabase.from('checkpoints').select('*').eq('farm_id', farmId);
+    if (emps) setEmployees(emps);
+    if (chks) setCheckpoints(chks);
   };
 
-  const simulateEvent = async (actionType: string) => {
+  const showMsg = (text: string, type: 'success' | 'error') => {
+    setMessage({ text, type });
+    setTimeout(() => setMessage(null), 3000);
+  };
+
+  const simulateScan = async (scenario: 'valid' | 'warning' | 'critical') => {
     setLoading(true);
-    setMessage(null);
-
     try {
-      // Logic giả lập sự kiện IoT ở đây
-      let alertMsg = '';
-      let severity = 'Thấp';
-      let title = '';
+      const emp = employees[Math.floor(Math.random() * employees.length)];
+      
+      let checkpoint = null;
+      let decision = 'allow';
+      let reason = 'Hợp lệ';
+      let risk_level = 'low';
 
-      switch (actionType) {
-        case 'RFID_XE':
-          title = 'Mô phỏng quét RFID xe';
-          alertMsg = 'Đã quét RFID xe 93C-67890 tại Cổng Chính.';
-          severity = 'Thấp';
-          break;
-        case 'GPS_XE_VUNG_CAM':
-          title = 'Mô phỏng xe đi vào vùng cấm';
-          alertMsg = 'Xe 93C-67890 đi vào Vùng Cấm mà không có quyền.';
-          severity = 'Cao';
-          break;
-        case 'UWB_NGUOI':
-          title = 'Mô phỏng UWB người vào chuồng';
-          alertMsg = 'Nhân viên NV-001 (Lê Thị Thu) đã vào Chuồng Nái 01.';
-          severity = 'Thấp';
-          break;
-        case 'UWB_NGUOI_SAI_VUNG':
-          title = 'Mô phỏng người đi sai vùng';
-          alertMsg = 'Bảo vệ NV-003 đi vào Chuồng Nái khi chưa tắm sát trùng.';
-          severity = 'Nghiêm trọng';
-          break;
-        case 'MAT_TIN_HIEU':
-          title = 'Mô phỏng thiết bị mất tín hiệu';
-          alertMsg = 'UWB Anchor tại Chuồng Nái 01 đã mất tín hiệu.';
-          severity = 'Trung bình';
-          break;
-        case 'HOAN_TAT_VE_SINH':
-          title = 'Mô phỏng hoàn tất vệ sinh';
-          alertMsg = 'Tổ vệ sinh đã hoàn tất công việc làm sạch Chuồng Nái 01 (đủ 45 phút).';
-          severity = 'Thấp';
-          break;
-        default:
-          break;
-      }
-
-      if (severity === 'Cao' || severity === 'Nghiêm trọng' || severity === 'Trung bình') {
-         await supabase.from('alerts').insert({
-            farm_id: farmId,
-            alert_code: `SIM-${Date.now().toString().slice(-6)}`,
-            alert_type: title,
-            severity: severity,
-            message: alertMsg,
-            status: 'Chưa xử lý'
-         });
-         setMessage({ text: `Đã tạo cảnh báo: ${alertMsg}`, type: 'error' });
+      if (scenario === 'valid') {
+        checkpoint = checkpoints.find(c => c.checkpoint_type === 'gate');
+      } else if (scenario === 'warning') {
+        checkpoint = checkpoints.find(c => c.checkpoint_type === 'shower');
+        decision = 'warning';
+        reason = 'Đi sai phòng tắm quy định';
+        risk_level = 'medium';
       } else {
-         setMessage({ text: `Sự kiện thành công: ${alertMsg}`, type: 'success' });
+        checkpoint = checkpoints.find(c => c.checkpoint_type === 'barn_door');
+        decision = 'deny';
+        reason = 'Cố gắng vào khu vực không được cấp quyền';
+        risk_level = 'critical';
       }
 
-      // Cập nhật lại farm's last_updated
-      await supabase.from('farms').update({ last_updated_at: new Date().toISOString() }).eq('id', farmId);
+      if (!emp || !checkpoint) throw new Error("Chưa có data mẫu.");
 
+      // Insert log
+      const { data: logRes } = await supabase.from('finger_scan_logs').insert({
+        farm_id: farmId,
+        checkpoint_id: checkpoint.id,
+        employee_id: emp.id,
+        decision,
+        reason,
+        risk_level
+      }).select().single();
+
+      // If warning or critical, generate alert
+      if (decision !== 'allow' && logRes) {
+        await supabase.from('biosecurity_alerts').insert({
+          farm_id: farmId,
+          alert_type: scenario === 'warning' ? 'wrong_shower' : 'unauthorized_access',
+          severity: scenario === 'warning' ? 'medium' : 'critical',
+          employee_id: emp.id,
+          checkpoint_id: checkpoint.id,
+          scan_log_id: logRes.id,
+          description: `Phát hiện: ${emp.full_name} - ${reason} tại ${checkpoint.checkpoint_name}`
+        });
+      }
+
+      showMsg(`Đã tạo sự kiện Finger Scan: ${decision.toUpperCase()}!`, 'success');
     } catch (err: any) {
-      setMessage({ text: `Lỗi: ${err.message}`, type: 'error' });
+      showMsg('Lỗi: ' + err.message, 'error');
     }
     setLoading(false);
   };
 
   return (
-    <div className="space-y-6 max-w-4xl">
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-        <div className="flex items-center text-gray-700 mb-6">
-          <Cpu className="mr-2 text-blue-600" size={28} />
-          <div>
-            <h2 className="text-xl font-bold">Bộ Mô Phỏng Thiết Bị IoT</h2>
-            <p className="text-sm text-gray-500">Giả lập tín hiệu phần cứng để kiểm thử luồng dữ liệu và cảnh báo</p>
-          </div>
-        </div>
-
-        <div className="mb-6 bg-blue-50/50 p-4 rounded-lg border border-blue-100">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Chọn khu vực đang Test (Đồng bộ Bản đồ 3D & Tổng quan)</label>
-          <select 
-            value={selectedZone}
-            onChange={handleZoneChange}
-            className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2.5 bg-white border"
-          >
-            <option value="">-- Không test khu vực nào --</option>
-            <option value="de1">Chuồng Đẻ 1</option>
-            <option value="de2">Chuồng Đẻ 2</option>
-            <option value="de3">Chuồng Đẻ 3</option>
-            <option value="bau1">Chuồng Bầu 1</option>
-            <option value="bau2">Chuồng Bầu 2</option>
-            <option value="duc">Chuồng Đực</option>
-            <option value="cach_ly">Khu Cách Ly</option>
-            <option value="sinh_hoat">Khu Sinh Hoạt</option>
-            <option value="tam">Khu Tắm/Thay đồ</option>
-            <option value="kho">Kho Thuốc/Dụng cụ</option>
-            <option value="sat_trung">Khu Sát Trùng Xe</option>
-            <option value="cong">Nhà Bảo Vệ (Cổng)</option>
-          </select>
-        </div>
+    <div className="space-y-6 max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+        <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center mb-2">
+          <Cpu className="mr-3 text-blue-600 dark:text-blue-400" size={28} />
+          Mô phỏng IoT (Finger Scan Simulator)
+        </h2>
+        <p className="text-gray-500 dark:text-gray-400 mb-6">
+          Bảng điều khiển này gửi các bản tin giả lập về server, đóng vai trò như các thiết bị vân tay thực tế gửi sự kiện.
+        </p>
 
         {message && (
-          <div className={`p-4 rounded-lg mb-6 flex items-start ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-            {message.type === 'success' ? <CheckCircle className="mr-2 mt-0.5 shrink-0" size={18} /> : <AlertTriangle className="mr-2 mt-0.5 shrink-0" size={18} />}
-            <p className="text-sm font-medium">{message.text}</p>
+          <div className={`p-4 rounded-xl mb-6 font-medium flex items-center ${message.type === 'success' ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200'}`}>
+            {message.type === 'success' ? <CheckCircle className="mr-2" /> : <AlertTriangle className="mr-2" />}
+            {message.text}
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-3">
-            <h3 className="font-semibold text-gray-800 border-b pb-2 mb-3">RFID & Vị trí Xe (GPS)</h3>
+        <div className="grid md:grid-cols-3 gap-4">
+          <div className="border dark:border-gray-700 p-5 rounded-2xl bg-gray-50 dark:bg-gray-800/50 flex flex-col justify-between">
+            <div>
+              <h3 className="font-bold text-lg mb-2 text-green-700 dark:text-green-400 flex items-center">
+                <CheckCircle size={20} className="mr-2" /> Hợp lệ (Allow)
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Mô phỏng nhân sự quét vân tay hợp lệ tại cổng.
+              </p>
+            </div>
             <button 
-              onClick={() => simulateEvent('RFID_XE')} disabled={loading}
-              className="w-full bg-blue-50 text-blue-700 hover:bg-blue-100 py-3 px-4 rounded-lg border border-blue-200 transition font-medium text-sm flex items-center justify-between"
+              onClick={() => simulateScan('valid')}
+              disabled={loading}
+              className="w-full py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition"
             >
-              <span className="flex items-center"><Truck size={18} className="mr-2" /> Quét RFID xe vào cổng</span>
-              <span className="text-xs bg-white px-2 py-1 rounded text-blue-500">Simulate</span>
-            </button>
-            <button 
-              onClick={() => simulateEvent('GPS_XE_VUNG_CAM')} disabled={loading}
-              className="w-full bg-red-50 text-red-700 hover:bg-red-100 py-3 px-4 rounded-lg border border-red-200 transition font-medium text-sm flex items-center justify-between"
-            >
-              <span className="flex items-center"><Navigation size={18} className="mr-2" /> GPS xe vào vùng cấm</span>
-              <span className="text-xs bg-white px-2 py-1 rounded text-red-500">Cảnh báo</span>
-            </button>
-          </div>
-
-          <div className="space-y-3">
-            <h3 className="font-semibold text-gray-800 border-b pb-2 mb-3">Nhân sự (UWB/RFID)</h3>
-            <button 
-              onClick={() => simulateEvent('UWB_NGUOI')} disabled={loading}
-              className="w-full bg-green-50 text-green-700 hover:bg-green-100 py-3 px-4 rounded-lg border border-green-200 transition font-medium text-sm flex items-center justify-between"
-            >
-              <span className="flex items-center"><Users size={18} className="mr-2" /> UWB người vào khu sạch</span>
-              <span className="text-xs bg-white px-2 py-1 rounded text-green-500">Simulate</span>
-            </button>
-            <button 
-              onClick={() => simulateEvent('UWB_NGUOI_SAI_VUNG')} disabled={loading}
-              className="w-full bg-red-50 text-red-700 hover:bg-red-100 py-3 px-4 rounded-lg border border-red-200 transition font-medium text-sm flex items-center justify-between"
-            >
-              <span className="flex items-center"><AlertTriangle size={18} className="mr-2" /> Người đi sai phân quyền</span>
-              <span className="text-xs bg-white px-2 py-1 rounded text-red-500">Cảnh báo</span>
+              Gửi dữ liệu Hợp lệ
             </button>
           </div>
 
-          <div className="space-y-3 mt-4">
-            <h3 className="font-semibold text-gray-800 border-b pb-2 mb-3">Tình trạng Thiết bị</h3>
+          <div className="border dark:border-gray-700 p-5 rounded-2xl bg-gray-50 dark:bg-gray-800/50 flex flex-col justify-between">
+            <div>
+              <h3 className="font-bold text-lg mb-2 text-orange-600 flex items-center">
+                <AlertTriangle size={20} className="mr-2" /> Cảnh báo (Warning)
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Mô phỏng nhân sự đi sai phòng tắm. Tạo cảnh báo Medium.
+              </p>
+            </div>
             <button 
-              onClick={() => simulateEvent('MAT_TIN_HIEU')} disabled={loading}
-              className="w-full bg-orange-50 text-orange-700 hover:bg-orange-100 py-3 px-4 rounded-lg border border-orange-200 transition font-medium text-sm flex items-center justify-between"
+              onClick={() => simulateScan('warning')}
+              disabled={loading}
+              className="w-full py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 font-medium transition"
             >
-              <span className="flex items-center"><WifiOff size={18} className="mr-2" /> Thiết bị mất tín hiệu</span>
-              <span className="text-xs bg-white px-2 py-1 rounded text-orange-500">Simulate</span>
+              Gửi dữ liệu Cảnh báo
             </button>
           </div>
 
-          <div className="space-y-3 mt-4">
-            <h3 className="font-semibold text-gray-800 border-b pb-2 mb-3">Vệ sinh sát trùng</h3>
+          <div className="border dark:border-gray-700 p-5 rounded-2xl bg-gray-50 dark:bg-gray-800/50 flex flex-col justify-between">
+            <div>
+              <h3 className="font-bold text-lg mb-2 text-red-600 flex items-center">
+                <XCircle size={20} className="mr-2" /> Từ chối (Deny)
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Mô phỏng nhân sự cố mở cửa khu vực không được phân công.
+              </p>
+            </div>
             <button 
-              onClick={() => simulateEvent('HOAN_TAT_VE_SINH')} disabled={loading}
-              className="w-full bg-teal-50 text-teal-700 hover:bg-teal-100 py-3 px-4 rounded-lg border border-teal-200 transition font-medium text-sm flex items-center justify-between"
+              onClick={() => simulateScan('critical')}
+              disabled={loading}
+              className="w-full py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition shadow-lg shadow-red-500/30"
             >
-              <span className="flex items-center"><CheckCircle size={18} className="mr-2" /> Xác nhận vệ sinh chuồng</span>
-              <span className="text-xs bg-white px-2 py-1 rounded text-teal-500">Simulate</span>
+              Gửi dữ liệu Từ chối
             </button>
           </div>
         </div>
