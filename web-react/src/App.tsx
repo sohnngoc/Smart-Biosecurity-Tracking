@@ -16,6 +16,7 @@ import CanhBao from './pages/QuanTriTrai/CanhBao';
 import MoPhongRuiRo from './pages/QuanTriTrai/MoPhongRuiRo';
 import MoPhongIoT from './pages/QuanTriTrai/MoPhongIoT';
 import BaoCaoThongMinh from './pages/QuanTriTrai/BaoCao/BaoCaoThongMinh';
+import SmartProductionReport from './pages/QuanTriTrai/SmartProductionReport/index';
 import DanhGiaDinhKy from './pages/QuanTriTrai/DanhGiaDinhKy';
 
 // Visit Request Global Pages
@@ -56,6 +57,7 @@ function App() {
           <Route path="canh-bao" element={<CanhBao />} />
           <Route path="danh-gia-dinh-ky" element={<DanhGiaDinhKy />} />
           <Route path="bao-cao-thong-minh" element={<BaoCaoThongMinh />} />
+          <Route path="bao-cao-san-xuat" element={<SmartProductionReport />} />
           <Route path="mo-phong-iot" element={<MoPhongIoT />} />
           <Route path="mo-phong-rui-ro" element={<MoPhongRuiRo />} />
         </Route>

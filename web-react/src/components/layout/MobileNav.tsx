@@ -12,7 +12,6 @@ import {
   ClipboardList,
   Menu,
   X,
-  BarChart,
   ClipboardCheck,
   ShieldCheck,
   UserCog
@@ -31,7 +30,7 @@ export const MENU_SECTIONS = [
     items: [
       { name: 'Tổng quan', path: '/tong-quan', icon: <LayoutDashboard size={20} />, isMain: true },
       { name: 'Bản đồ chuồng', path: '/ban-do-noi-bo', icon: <Map size={20} />, isMain: true },
-      { name: 'Báo cáo thông minh', path: '/bao-cao-thong-minh', icon: <BarChart size={20} /> },
+      { name: 'Báo cáo sản xuất', path: '/bao-cao-san-xuat', icon: <FileText size={20} /> },
     ]
   },
   {
