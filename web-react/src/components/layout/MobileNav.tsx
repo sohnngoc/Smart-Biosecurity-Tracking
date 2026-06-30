@@ -24,7 +24,7 @@ interface MobileNavProps {
 export const MAIN_MENU = [
   { name: 'Tổng quan', path: '/tong-quan', icon: <LayoutDashboard size={20} /> },
   { name: 'Bản đồ', path: '/ban-do-noi-bo', icon: <Map size={20} /> },
-  { name: 'Phân công', path: '/phan-cong', icon: <ClipboardList size={20} /> },
+  { name: 'Phân công', path: '/phan-cong-cong-viec', icon: <ClipboardList size={20} /> },
   { name: 'Cảnh báo', path: '/canh-bao', icon: <AlertTriangle size={20} /> },
 ];
 
