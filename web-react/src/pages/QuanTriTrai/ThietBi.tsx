@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { Fingerprint, Search, Wifi, WifiOff, Battery, Clock, ArrowLeft, Shield, History } from 'lucide-react';
+import { Fingerprint, Search, Wifi, WifiOff, Battery, Clock, ArrowLeft, Shield, History, UserPlus, CheckCircle2 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 
 export const generateMockDevices = () => []; // Stub for TongQuanTrai
@@ -21,7 +21,13 @@ export default function ThietBi() {
   const [devices, setDevices] = useState<Device[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
-  const [activeTab, setActiveTab] = useState<'permissions' | 'logs'>('permissions');
+  const [activeTab, setActiveTab] = useState<'permissions' | 'logs' | 'register'>('permissions');
+
+  // Scanning simulation states
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanProgress, setScanProgress] = useState(0);
+  const [scanSuccess, setScanSuccess] = useState(false);
+  const scanIntervalRef = useRef<any>(null);
 
   // Mock data for the device modal
   const mockPermissions = [
@@ -37,6 +43,31 @@ export default function ThietBi() {
     { id: 3, name: 'Trần Thị B', time: '08:15 AM - Hôm nay', status: 'Hợp lệ' },
     { id: 4, name: 'Phạm Thị D', time: '16:45 PM - Hôm qua', status: 'Hợp lệ' },
   ];
+
+  const handleStartScan = () => {
+    setIsScanning(true);
+    setScanProgress(0);
+    setScanSuccess(false);
+
+    scanIntervalRef.current = setInterval(() => {
+      setScanProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(scanIntervalRef.current);
+          setIsScanning(false);
+          setScanSuccess(true);
+          return 100;
+        }
+        return prev + Math.floor(Math.random() * 15) + 5;
+      });
+    }, 500);
+  };
+
+  // Cleanup interval on unmount
+  useEffect(() => {
+    return () => {
+      if (scanIntervalRef.current) clearInterval(scanIntervalRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (farmId) fetchDevices();
@@ -85,6 +116,12 @@ export default function ThietBi() {
             <Shield size={18} className="mr-2"/> Cấp quyền vân tay
           </button>
           <button
+            onClick={() => setActiveTab('register')}
+            className={`flex items-center px-4 py-3 font-medium text-sm border-b-2 transition ${activeTab === 'register' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+          >
+            <UserPlus size={18} className="mr-2"/> Đăng ký vân tay mới
+          </button>
+          <button
             onClick={() => setActiveTab('logs')}
             className={`flex items-center px-4 py-3 font-medium text-sm border-b-2 transition ${activeTab === 'logs' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
           >
@@ -112,6 +149,70 @@ export default function ThietBi() {
                   </label>
                 </div>
               ))}
+            </div>
+          </div>
+        ) : activeTab === 'register' ? (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 animate-in fade-in duration-300">
+            <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-6">Đăng ký vân tay cho nhân sự</h3>
+            
+            <div className="max-w-2xl mx-auto space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Chọn nhân sự cần đăng ký</label>
+                <select className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 outline-none text-gray-800 dark:text-white">
+                  <option value="">-- Vui lòng chọn nhân sự --</option>
+                  <option value="1">Lý Văn E - Kỹ thuật viên</option>
+                  <option value="2">Vũ Thị F - Công nhân vệ sinh</option>
+                  <option value="3">Đỗ Văn G - Bảo vệ</option>
+                </select>
+              </div>
+
+              <div className="bg-gray-50 dark:bg-gray-900/50 p-8 rounded-2xl border border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center text-center">
+                <div className={`relative w-24 h-24 mb-6 flex items-center justify-center rounded-full transition-all duration-500 ${isScanning ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-500 shadow-[0_0_30px_rgba(59,130,246,0.5)]' : scanSuccess ? 'bg-green-100 dark:bg-green-900/30 text-green-500' : 'bg-gray-100 dark:bg-gray-800 text-gray-400'}`}>
+                  {scanSuccess ? (
+                    <CheckCircle2 size={48} className="animate-in zoom-in duration-300" />
+                  ) : (
+                    <Fingerprint size={48} className={isScanning ? 'animate-pulse' : ''} />
+                  )}
+                  {isScanning && (
+                    <div className="absolute inset-0 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                  )}
+                </div>
+
+                <h4 className="text-xl font-bold text-gray-800 dark:text-white mb-2">
+                  {isScanning ? 'Đang lấy mẫu vân tay...' : scanSuccess ? 'Đăng ký thành công!' : 'Sẵn sàng đăng ký'}
+                </h4>
+                <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-md">
+                  {isScanning 
+                    ? `Vui lòng yêu cầu nhân viên đặt tay lên thiết bị và giữ nguyên. Quá trình: ${scanProgress}%` 
+                    : scanSuccess 
+                    ? 'Dữ liệu vân tay đã được đồng bộ xuống thiết bị và lưu trữ an toàn trên hệ thống.' 
+                    : 'Yêu cầu thiết bị chuyển sang chế độ đăng ký và bắt đầu quét vân tay.'}
+                </p>
+
+                {isScanning ? (
+                  <div className="w-full max-w-xs h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-blue-500 transition-all duration-500 ease-out" 
+                      style={{ width: `${scanProgress}%` }}
+                    ></div>
+                  </div>
+                ) : scanSuccess ? (
+                  <button 
+                    onClick={() => { setScanSuccess(false); setScanProgress(0); }}
+                    className="px-6 py-2.5 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-medium rounded-xl transition"
+                  >
+                    Đăng ký người khác
+                  </button>
+                ) : (
+                  <button 
+                    onClick={handleStartScan}
+                    className="flex items-center px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition shadow-lg shadow-blue-500/30"
+                  >
+                    <Fingerprint size={18} className="mr-2" />
+                    Bắt đầu quét trên thiết bị
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         ) : (
