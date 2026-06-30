@@ -18,3 +18,19 @@
 .dark .custom-scrollbar::-webkit-scrollbar-thumb {
   background-color: #475569;
 }
+
+/* Map specific styles */
+.map-dark-filter .leaflet-layer,
+.map-dark-filter .leaflet-control-zoom-in,
+.map-dark-filter .leaflet-control-zoom-out,
+.map-dark-filter .leaflet-control-attribution {
+  filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+}
+
+.glass-popup .leaflet-popup-content-wrapper,
+.glass-popup .leaflet-popup-tip {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+}
