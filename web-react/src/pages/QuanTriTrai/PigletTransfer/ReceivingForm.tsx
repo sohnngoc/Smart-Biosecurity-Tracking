@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Camera, AlertTriangle, CheckSquare, FileText, AlertCircle, Calendar } from 'lucide-react';
+import { X, Camera, CheckSquare, AlertCircle, Calendar } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
 
 export default function ReceivingForm({ receivingId, onClose, onSave, farmId, employees, barns }: any) {
@@ -98,7 +98,6 @@ export default function ReceivingForm({ receivingId, onClose, onSave, farmId, em
   };
 
   const isDiscrepancy = formData.actual_qty !== formData.expected_qty;
-  const hasHealthIssue = (formData.dead_qty + formData.cull_qty + formData.sick_qty + formData.diarrhea_qty + formData.respiratory_qty + formData.injured_qty) > 0;
   const missingEvidence = formData.has_claim && (!formData.evidence_photos || formData.evidence_photos.length === 0);
 
   const handleSave = async (newStatus?: string) => {

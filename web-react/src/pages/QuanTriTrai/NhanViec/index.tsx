@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useOutletContext, useNavigate } from 'react-router-dom';
+import { useOutletContext } from 'react-router-dom';
 import { supabase } from '../../../lib/supabaseClient';
 import { 
   Briefcase, CheckCircle, Clock, PlayCircle, AlertTriangle, FileText, Upload, ChevronRight
