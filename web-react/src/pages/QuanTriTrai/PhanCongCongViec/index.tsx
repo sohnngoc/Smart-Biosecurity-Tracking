@@ -23,6 +23,7 @@ interface Zone {
 
 interface Barn {
   id: string;
+  zone_id: string;
   barn_name: string;
   barn_type: string;
 }
@@ -104,7 +105,13 @@ export default function PhanCongCongViec() {
 
   const handleValidate = () => {
     const errors: string[] = [];
-    
+    // Basic validation
+    assignments.forEach((a, idx) => {
+      if (!a.employee_id) {
+        errors.push(`Công việc dòng thứ ${idx + 1} chưa chọn nhân sự.`);
+      }
+    });
+
     // Shower capacity check
     const showerCounts: Record<string, number> = {};
     assignments.forEach(a => {
@@ -183,7 +190,11 @@ export default function PhanCongCongViec() {
         plan_id: plan.id,
         status: 'assigned'
       }));
-      await supabase.from('assigned_tasks').insert(tasksToInsert);
+      const res = await supabase.from('assigned_tasks').insert(tasksToInsert);
+      if (res.error) {
+        alert("Có lỗi xảy ra khi gán công việc: " + res.error.message);
+        return;
+      }
     }
     
     setIsPublished(true);
@@ -365,7 +376,7 @@ export default function PhanCongCongViec() {
                         className="bg-transparent border-gray-300 dark:border-gray-600 rounded p-1"
                       >
                         <option value="">-- Toàn khu --</option>
-                        {barns.filter(b => (b as any).farm_zones?.id === a.zone_id).map(b => (
+                        {barns.filter(b => b.zone_id === a.zone_id).map(b => (
                           <option key={b.id} value={b.id}>{b.barn_name}</option>
                         ))}
                       </select>
