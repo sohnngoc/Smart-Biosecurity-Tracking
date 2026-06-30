@@ -51,7 +51,7 @@ const getPersonIcon = () => {
   return new L.DivIcon({
     className: 'bg-transparent',
     html: `
-      <div class="relative flex items-center justify-center w-8 h-8 -ml-4 -mt-4 bg-red-500 rounded-full shadow-[0_0_15px_rgba(239,68,68,0.8)] border-2 border-white z-[1000] animate-bounce">
+      <div class="relative flex items-center justify-center w-8 h-8 -ml-4 -mt-4 bg-red-500 rounded-full shadow-[0_0_15px_rgba(239,68,68,0.8)] border-2 border-white z-1000 animate-bounce">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
           <circle cx="12" cy="7" r="4"></circle>
@@ -68,7 +68,7 @@ const getTruckIcon = () => {
   return new L.DivIcon({
     className: 'bg-transparent',
     html: `
-      <div class="relative flex items-center justify-center w-8 h-8 -ml-4 -mt-4 bg-amber-400 rounded-full shadow-[0_0_15px_rgba(251,191,36,0.8)] border-2 border-slate-900 z-[1000] animate-bounce">
+      <div class="relative flex items-center justify-center w-8 h-8 -ml-4 -mt-4 bg-amber-400 rounded-full shadow-[0_0_15px_rgba(251,191,36,0.8)] border-2 border-slate-900 z-1000 animate-bounce">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-900">
           <path d="M10 17h4V5H2v12h3"></path>
           <path d="M20 17h2v-9l-2-2h-3v11h1"></path>
@@ -357,7 +357,7 @@ export default function BanDoTongQuan() {
       <motion.header 
         initial={{ y: -100 }}
         animate={{ y: 0 }}
-        className="absolute top-0 left-0 right-0 h-16 lg:h-20 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border-b border-white/50 dark:border-slate-800/50 px-4 lg:px-6 flex justify-between items-center z-[50] shadow-sm"
+        className="absolute top-0 left-0 right-0 h-16 lg:h-20 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border-b border-white/50 dark:border-slate-800/50 px-4 lg:px-6 flex justify-between items-center z-50 shadow-sm"
       >
         <div className="flex items-center gap-3">
           <button 
@@ -367,7 +367,7 @@ export default function BanDoTongQuan() {
             <Menu size={24} />
           </button>
           <div className="flex items-center gap-3 bg-white/50 dark:bg-slate-800/50 px-3 py-2 rounded-xl shadow-sm border border-slate-200/50 dark:border-slate-700/50">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+            <div className="w-8 h-8 rounded-lg bg-linear-to-br from-emerald-500 to-emerald-700 flex items-center justify-center shadow-lg shadow-emerald-500/20">
               <MapIcon className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -422,7 +422,7 @@ export default function BanDoTongQuan() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[60] lg:hidden"
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-60 lg:hidden"
             onClick={() => setIsSidebarOpen(false)}
           />
         )}
@@ -437,7 +437,7 @@ export default function BanDoTongQuan() {
         }}
         transition={{ type: "spring", bounce: 0, duration: 0.4 }}
         className={cn(
-          "fixed top-0 left-0 bottom-0 w-[320px] sm:w-[360px] z-[70] flex flex-col",
+          "fixed top-0 left-0 bottom-0 w-[320px] sm:w-[360px] z-70 flex flex-col",
           "bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl shadow-2xl border-r border-slate-200/50 dark:border-slate-800/50",
           "lg:absolute lg:top-24 lg:left-6 lg:bottom-6 lg:rounded-3xl lg:border lg:w-[380px]"
         )}
@@ -548,7 +548,7 @@ export default function BanDoTongQuan() {
       </motion.div>
 
       {/* Floating Simulation Action Menu (Desktop: Bottom right, Mobile: Bottom right above FAB) */}
-      <div className="absolute bottom-6 right-4 lg:bottom-8 lg:right-8 z-[50] flex flex-col items-end">
+      <div className="absolute bottom-6 right-4 lg:bottom-8 lg:right-8 z-50 flex flex-col items-end">
         {showSimMenu && (
           <motion.div 
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
@@ -615,7 +615,7 @@ export default function BanDoTongQuan() {
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="absolute bottom-24 lg:bottom-8 left-4 right-4 lg:left-1/2 lg:-translate-x-1/2 z-[80] pointer-events-none"
+            className="absolute bottom-24 lg:bottom-8 left-4 right-4 lg:left-1/2 lg:-translate-x-1/2 z-80 pointer-events-none"
           >
             <div className={cn(
               "mx-auto max-w-lg rounded-2xl shadow-2xl p-5 flex items-start border backdrop-blur-xl pointer-events-auto",
@@ -649,7 +649,7 @@ export default function BanDoTongQuan() {
       {/* Modal Chỉnh sửa / Thêm Trại */}
       <AnimatePresence>
         {editingFarm && (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-100 p-4">
             <motion.div 
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
