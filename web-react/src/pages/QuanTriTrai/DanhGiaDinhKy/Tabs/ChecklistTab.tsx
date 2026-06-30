@@ -147,7 +147,7 @@ export default function ChecklistTab({ formCode, farmId, periodId }: { formCode:
   };
 
   const answersWithCriteria = criteria.map(c => {
-    const a = answers[c.id];
+    const a = answers[c.id] || {};
     return {
       ...a,
       score: mapStatusToScore(a.checklist_status),
