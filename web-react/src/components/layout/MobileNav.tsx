@@ -11,7 +11,11 @@ import {
   CheckCircle,
   ClipboardList,
   Menu,
-  X
+  X,
+  BarChart,
+  ClipboardCheck,
+  ShieldCheck,
+  UserCog
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { useState } from "react";
@@ -21,22 +25,50 @@ interface MobileNavProps {
   farmCode: string;
 }
 
-export const MAIN_MENU = [
-  { name: 'Tổng quan', path: '/tong-quan', icon: <LayoutDashboard size={20} /> },
-  { name: 'Bản đồ', path: '/ban-do-noi-bo', icon: <Map size={20} /> },
-  { name: 'Phân công', path: '/phan-cong-cong-viec', icon: <ClipboardList size={20} /> },
-  { name: 'Cảnh báo', path: '/canh-bao', icon: <AlertTriangle size={20} /> },
+export const MENU_SECTIONS = [
+  {
+    title: "Theo dõi & Báo cáo",
+    items: [
+      { name: 'Tổng quan', path: '/tong-quan', icon: <LayoutDashboard size={20} />, isMain: true },
+      { name: 'Bản đồ chuồng', path: '/ban-do-noi-bo', icon: <Map size={20} />, isMain: true },
+      { name: 'Báo cáo thông minh', path: '/bao-cao-thong-minh', icon: <BarChart size={20} /> },
+    ]
+  },
+  {
+    title: "Quản lý công việc",
+    items: [
+      { name: 'Phân công', path: '/phan-cong-cong-viec', icon: <ClipboardList size={20} />, isMain: true },
+      { name: 'Việc được giao', path: '/cong-viec-duoc-giao', icon: <CheckCircle size={20} /> },
+      { name: 'Đánh giá định kỳ', path: '/danh-gia-dinh-ky', icon: <ClipboardCheck size={20} /> },
+    ]
+  },
+  {
+    title: "An ninh sinh học",
+    items: [
+      { name: 'Cảnh báo', path: '/canh-bao', icon: <AlertTriangle size={20} />, isMain: true },
+      { name: 'Đăng ký vào trại', path: '/dang-ky-vao-trai', icon: <FileText size={20} /> },
+      { name: 'Duyệt vào trại', path: '/duyet-vao-trai', icon: <ShieldCheck size={20} /> },
+      { name: 'Giám sát ra/vào', path: '/nguoi-ra-vao', icon: <Users size={20} /> },
+    ]
+  },
+  {
+    title: "Quản trị hệ thống",
+    items: [
+      { name: 'Nhân sự', path: '/nhan-su', icon: <UserCog size={20} /> },
+      { name: 'Thiết bị', path: '/thiet-bi', icon: <Settings size={20} /> },
+    ]
+  },
+  {
+    title: "Môi trường giả lập",
+    items: [
+      { name: 'Mô phỏng rủi ro', path: '/mo-phong-rui-ro', icon: <ShieldAlert size={20} /> },
+      { name: 'Bộ mô phỏng IoT', path: '/mo-phong-iot', icon: <Cpu size={20} /> },
+    ]
+  }
 ];
 
-export const EXTRA_MENU = [
-  { name: 'Việc được giao', path: '/cong-viec-duoc-giao', icon: <CheckCircle size={20} /> },
-  { name: 'Thiết bị', path: '/thiet-bi', icon: <Settings size={20} /> },
-  { name: 'Đăng ký vào trại', path: '/dang-ky-vao-trai', icon: <FileText size={20} /> },
-  { name: 'Duyệt vào trại', path: '/duyet-vao-trai', icon: <CheckCircle size={20} /> },
-  { name: 'Người ra/vào', path: '/nguoi-ra-vao', icon: <Users size={20} /> },
-  { name: 'Mô phỏng rủi ro', path: '/mo-phong-rui-ro', icon: <ShieldAlert size={20} /> },
-  { name: 'Bộ mô phỏng IoT', path: '/mo-phong-iot', icon: <Cpu size={20} /> },
-];
+export const MAIN_MENU = MENU_SECTIONS.flatMap(s => s.items).filter(i => i.isMain);
+export const EXTRA_MENU = MENU_SECTIONS.flatMap(s => s.items).filter(i => !i.isMain);
 
 export default function MobileNav({ farmCode }: MobileNavProps) {
   const location = useLocation();
@@ -115,29 +147,36 @@ export default function MobileNav({ farmCode }: MobileNavProps) {
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-                {EXTRA_MENU.map((item) => {
-                  const fullPath = `/trai/${farmCode}${item.path}`;
-                  const isActive = location.pathname.includes(fullPath);
-                  return (
-                    <Link
-                      key={item.path}
-                      to={fullPath}
-                      onClick={() => setDrawerOpen(false)}
-                      className={cn(
-                        "flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium",
-                        isActive 
-                          ? "bg-emerald-50 text-emerald-700" 
-                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                      )}
-                    >
-                      <div className={cn(isActive ? "text-emerald-600" : "text-slate-400")}>
-                        {item.icon}
-                      </div>
-                      {item.name}
-                    </Link>
-                  );
-                })}
+              <div className="flex-1 overflow-y-auto py-4 px-3 space-y-6">
+                {MENU_SECTIONS.map((section, idx) => (
+                  <div key={idx} className="space-y-1">
+                    <h3 className="px-4 text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                      {section.title}
+                    </h3>
+                    {section.items.filter(i => !i.isMain).map((item) => {
+                      const fullPath = `/trai/${farmCode}${item.path}`;
+                      const isActive = location.pathname.includes(fullPath);
+                      return (
+                        <Link
+                          key={item.path}
+                          to={fullPath}
+                          onClick={() => setDrawerOpen(false)}
+                          className={cn(
+                            "flex items-center gap-3 px-4 py-2.5 rounded-xl transition-colors font-medium text-sm",
+                            isActive 
+                              ? "bg-emerald-50 text-emerald-700" 
+                              : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                          )}
+                        >
+                          <div className={cn(isActive ? "text-emerald-600" : "text-slate-400")}>
+                            {item.icon}
+                          </div>
+                          {item.name}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                ))}
               </div>
             </motion.div>
           </>
