@@ -30,7 +30,6 @@ export const MAIN_MENU = [
 
 export const EXTRA_MENU = [
   { name: 'Việc được giao', path: '/cong-viec-duoc-giao', icon: <CheckCircle size={20} /> },
-  { name: 'Nhận việc (Mobile App)', path: '/nhan-viec', icon: <ClipboardList size={20} /> },
   { name: 'Thiết bị', path: '/thiet-bi', icon: <Settings size={20} /> },
   { name: 'Đăng ký vào trại', path: '/dang-ky-vao-trai', icon: <FileText size={20} /> },
   { name: 'Duyệt vào trại', path: '/duyet-vao-trai', icon: <CheckCircle size={20} /> },
