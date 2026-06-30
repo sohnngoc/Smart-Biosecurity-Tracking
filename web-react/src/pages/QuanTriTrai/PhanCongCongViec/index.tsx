@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import { supabase } from '../../../lib/supabaseClient';
 import { 
   ClipboardList, Plus, Copy, Upload, Download, 
-  CheckCircle, AlertCircle, Send, Calendar, ShieldAlert
+  CheckCircle, AlertCircle, Send, Calendar, ShieldAlert, X
 } from 'lucide-react';
 
 interface Employee {
@@ -45,6 +45,10 @@ interface Assignment {
   task_description: string;
   biosecurity_level: string;
   status: string;
+  // UI only fields for new requirement
+  ui_task_type?: 'cleaning' | 'technical' | 'both';
+  ui_cleaning_desc?: string;
+  ui_technical_desc?: string;
 }
 
 export default function PhanCongCongViec() {
@@ -137,7 +141,29 @@ export default function PhanCongCongViec() {
       const { data: tasks } = await supabase.from('assigned_tasks').select('*').eq('plan_id', planData.id);
       if (tasks && tasks.length > 0) {
         setIsPublished(true);
-        setAssignments(tasks);
+        const parsedTasks = tasks.map((t: any) => {
+          let ui_task_type: 'cleaning' | 'technical' | 'both' = 'cleaning';
+          let ui_cleaning_desc = '';
+          let ui_technical_desc = '';
+          const desc = t.task_description || '';
+          
+          if (desc.includes('[Vệ sinh]') && desc.includes('[Kỹ thuật]')) {
+             ui_task_type = 'both';
+             const parts = desc.split('[Kỹ thuật]');
+             ui_cleaning_desc = parts[0].replace('[Vệ sinh]', '').trim();
+             ui_technical_desc = parts[1].trim();
+          } else if (desc.includes('[Kỹ thuật]')) {
+             ui_task_type = 'technical';
+             ui_technical_desc = desc.replace('[Kỹ thuật]', '').trim();
+          } else if (desc.includes('[Vệ sinh]')) {
+             ui_task_type = 'cleaning';
+             ui_cleaning_desc = desc.replace('[Vệ sinh]', '').trim();
+          } else {
+             ui_cleaning_desc = desc;
+          }
+          return { ...t, ui_task_type, ui_cleaning_desc, ui_technical_desc };
+        });
+        setAssignments(parsedTasks);
       } else {
         setIsPublished(false);
         setAssignments([]);
@@ -229,12 +255,27 @@ export default function PhanCongCongViec() {
     }
 
     if (plan && assignments.length > 0) {
-      const tasksToInsert = assignments.map(a => ({
-        ...a,
-        id: undefined, // let db generate
-        plan_id: plan.id,
-        status: 'assigned'
-      }));
+      const tasksToInsert = assignments.map(a => {
+        let combinedDesc = a.task_description;
+        if (a.ui_task_type) {
+          if (a.ui_task_type === 'cleaning') combinedDesc = `[Vệ sinh] ${a.ui_cleaning_desc || ''}`;
+          else if (a.ui_task_type === 'technical') combinedDesc = `[Kỹ thuật] ${a.ui_technical_desc || ''}`;
+          else if (a.ui_task_type === 'both') combinedDesc = `[Vệ sinh] ${a.ui_cleaning_desc || ''}\n[Kỹ thuật] ${a.ui_technical_desc || ''}`;
+        }
+        
+        return {
+          employee_id: a.employee_id,
+          task_category: a.task_category,
+          zone_id: a.zone_id,
+          barn_id: a.barn_id,
+          assigned_shower_id: a.assigned_shower_id,
+          shift: a.shift,
+          task_description: combinedDesc,
+          biosecurity_level: a.biosecurity_level,
+          status: 'assigned',
+          plan_id: plan!.id
+        };
+      });
       const res = await supabase.from('assigned_tasks').insert(tasksToInsert);
       if (res.error) {
         alert("Có lỗi xảy ra khi gán công việc: " + res.error.message);
@@ -250,14 +291,17 @@ export default function PhanCongCongViec() {
     setAssignments([...assignments, {
       id: crypto.randomUUID(),
       employee_id: employees[0]?.id || '',
-      task_category: 'general',
+      task_category: 'sanitation',
       zone_id: null,
       barn_id: null,
       assigned_shower_id: showers[0]?.id || null,
       shift: 'day',
-      task_description: 'Công việc mới',
+      task_description: '',
       biosecurity_level: 'normal',
-      status: 'draft'
+      status: 'draft',
+      ui_task_type: 'cleaning',
+      ui_cleaning_desc: '',
+      ui_technical_desc: ''
     }]);
   };
 
@@ -335,131 +379,167 @@ export default function PhanCongCongViec() {
         </div>
       )}
 
-      {/* Data Grid */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-gray-600 dark:text-gray-300">
-            <thead className="bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-200 uppercase font-semibold">
-              <tr>
-                <th className="px-4 py-3">Nhân sự</th>
-                <th className="px-4 py-3">Ca làm</th>
-                <th className="px-4 py-3">Nhóm / Vai trò</th>
-                <th className="px-4 py-3">Khu vực (Zone)</th>
-                <th className="px-4 py-3">Chuồng (Barn)</th>
-                <th className="px-4 py-3">Phòng tắm bắt buộc</th>
-                <th className="px-4 py-3">Mô tả chi tiết</th>
-                {!isPublished && <th className="px-4 py-3 text-right">Thao tác</th>}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-              {assignments.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="px-4 py-10 text-center text-gray-500">
-                    Chưa có công việc nào được phân công. Hãy nhấn "Thêm công việc" hoặc "Chép từ hôm qua".
-                  </td>
-                </tr>
-              ) : (
-                assignments.map(a => (
-                  <tr key={a.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
-                    <td className="px-4 py-3">
-                      <select 
-                        disabled={isPublished}
-                        value={a.employee_id} 
-                        onChange={(e) => updateAssignment(a.id, 'employee_id', e.target.value)}
-                        className="w-full bg-transparent border-gray-300 dark:border-gray-600 rounded p-1 outline-none focus:ring-1 focus:ring-blue-500"
-                      >
-                        <option value="">-- Chọn --</option>
-                        {employees.map(emp => (
-                          <option key={emp.id} value={emp.id}>{emp.full_name} ({emp.job_title})</option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="px-4 py-3">
-                      <select 
-                        disabled={isPublished}
-                        value={a.shift} 
-                        onChange={(e) => updateAssignment(a.id, 'shift', e.target.value)}
-                        className="bg-transparent border-gray-300 dark:border-gray-600 rounded p-1"
-                      >
-                        <option value="day">Ngày</option>
-                        <option value="night">Đêm</option>
-                      </select>
-                    </td>
-                    <td className="px-4 py-3">
-                      <select 
-                        disabled={isPublished}
-                        value={a.task_category} 
-                        onChange={(e) => updateAssignment(a.id, 'task_category', e.target.value)}
-                        className="bg-transparent border-gray-300 dark:border-gray-600 rounded p-1"
-                      >
-                        <option value="farrowing">Chuồng đẻ</option>
-                        <option value="gestation">Chuồng bầu</option>
-                        <option value="vet">Kỹ thuật / Vet</option>
-                        <option value="isolation">Cách ly</option>
-                        <option value="sanitation">Phòng dịch / Vệ sinh</option>
-                        <option value="general">Khác</option>
-                      </select>
-                    </td>
-                    <td className="px-4 py-3">
-                      <select 
-                        disabled={isPublished}
-                        value={a.zone_id || ''} 
-                        onChange={(e) => updateAssignment(a.id, 'zone_id', e.target.value || null)}
-                        className="bg-transparent border-gray-300 dark:border-gray-600 rounded p-1"
-                      >
-                        <option value="">-- Tùy ý --</option>
-                        {zones.map(z => (
-                          <option key={z.id} value={z.id}>{z.zone_name}</option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="px-4 py-3">
-                      <select 
-                        disabled={isPublished || !a.zone_id}
-                        value={a.barn_id || ''} 
-                        onChange={(e) => updateAssignment(a.id, 'barn_id', e.target.value || null)}
-                        className="bg-transparent border-gray-300 dark:border-gray-600 rounded p-1"
-                      >
-                        <option value="">-- Toàn khu --</option>
-                        {barns.filter(b => b.zone_id === a.zone_id).map(b => (
-                          <option key={b.id} value={b.id}>{b.barn_name}</option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="px-4 py-3">
-                      <select 
-                        disabled={isPublished}
-                        value={a.assigned_shower_id || ''} 
-                        onChange={(e) => updateAssignment(a.id, 'assigned_shower_id', e.target.value || null)}
-                        className="bg-transparent border-gray-300 dark:border-gray-600 rounded p-1"
-                      >
-                        <option value="">-- Bỏ qua --</option>
-                        {showers.map(s => (
-                          <option key={s.id} value={s.id}>{s.room_name} (Max {s.max_capacity})</option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="px-4 py-3">
+      {/* Data Grid / Cards */}
+      <div className="space-y-4">
+        {assignments.length === 0 ? (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-10 text-center text-gray-500 border border-dashed border-gray-300 dark:border-gray-700">
+            Chưa có công việc nào được phân công. Hãy nhấn "Thêm công việc" hoặc "Chép từ hôm qua".
+          </div>
+        ) : (
+          assignments.map((a, idx) => (
+            <div key={a.id} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm hover:shadow-md transition relative">
+              
+              <div className="flex justify-between items-center mb-4 pb-3 border-b border-gray-100 dark:border-gray-700">
+                <h4 className="font-bold text-lg text-gray-800 dark:text-gray-200 flex items-center">
+                  <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-md mr-3 text-sm">#{idx + 1}</span>
+                  Giao việc
+                </h4>
+                {!isPublished && (
+                  <button onClick={() => removeAssignment(a.id)} className="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg font-medium transition text-sm flex items-center">
+                    <X size={16} className="mr-1"/> Xóa
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+                {/* Employee */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Nhân sự thực hiện</label>
+                  <select 
+                    disabled={isPublished}
+                    value={a.employee_id} 
+                    onChange={(e) => updateAssignment(a.id, 'employee_id', e.target.value)}
+                    className="w-full bg-gray-50 dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">-- Chọn nhân sự --</option>
+                    {employees.map(emp => (
+                      <option key={emp.id} value={emp.id}>{emp.full_name} ({emp.job_title})</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Shift */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Ca làm việc</label>
+                  <select 
+                    disabled={isPublished}
+                    value={a.shift} 
+                    onChange={(e) => updateAssignment(a.id, 'shift', e.target.value)}
+                    className="w-full bg-gray-50 dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="day">☀️ Ca Ngày</option>
+                    <option value="night">🌙 Ca Đêm</option>
+                  </select>
+                </div>
+
+                {/* Zone */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Khu vực (Zone)</label>
+                  <select 
+                    disabled={isPublished}
+                    value={a.zone_id || ''} 
+                    onChange={(e) => updateAssignment(a.id, 'zone_id', e.target.value || null)}
+                    className="w-full bg-gray-50 dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">-- Toàn trại --</option>
+                    {zones.map(z => (
+                      <option key={z.id} value={z.id}>{z.zone_name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Barn */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Chuồng (Barn)</label>
+                  <select 
+                    disabled={isPublished || !a.zone_id}
+                    value={a.barn_id || ''} 
+                    onChange={(e) => updateAssignment(a.id, 'barn_id', e.target.value || null)}
+                    className="w-full bg-gray-50 dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">-- Tùy ý --</option>
+                    {barns.filter(b => b.zone_id === a.zone_id).map(b => (
+                      <option key={b.id} value={b.id}>{b.barn_name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Task Type & Details */}
+              <div className="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-5 border border-gray-100 dark:border-gray-600">
+                <div className="mb-4 flex flex-col md:flex-row md:items-center gap-4">
+                  <label className="text-sm font-bold text-gray-700 dark:text-gray-300 whitespace-nowrap">Loại công việc:</label>
+                  <div className="flex flex-wrap gap-4">
+                    <label className="flex items-center cursor-pointer bg-white dark:bg-gray-800 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-600 hover:border-blue-500 transition">
                       <input 
+                        type="radio" 
                         disabled={isPublished}
-                        type="text" 
-                        value={a.task_description} 
-                        onChange={(e) => updateAssignment(a.id, 'task_description', e.target.value)}
-                        placeholder="Nhiệm vụ..."
-                        className="w-full bg-transparent border-gray-300 dark:border-gray-600 border rounded p-1 px-2 focus:ring-1 focus:ring-blue-500"
+                        name={`task_type_${a.id}`} 
+                        value="cleaning"
+                        checked={a.ui_task_type === 'cleaning'}
+                        onChange={() => updateAssignment(a.id, 'ui_task_type', 'cleaning')}
+                        className="mr-2 text-blue-600 focus:ring-blue-500 h-4 w-4"
                       />
-                    </td>
-                    {!isPublished && (
-                      <td className="px-4 py-3 text-right">
-                        <button onClick={() => removeAssignment(a.id)} className="text-red-500 hover:text-red-700 font-medium">Xóa</button>
-                      </td>
-                    )}
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                      <span className="text-gray-700 dark:text-gray-300 font-medium">Vệ sinh</span>
+                    </label>
+                    <label className="flex items-center cursor-pointer bg-white dark:bg-gray-800 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-600 hover:border-blue-500 transition">
+                      <input 
+                        type="radio" 
+                        disabled={isPublished}
+                        name={`task_type_${a.id}`} 
+                        value="technical"
+                        checked={a.ui_task_type === 'technical'}
+                        onChange={() => updateAssignment(a.id, 'ui_task_type', 'technical')}
+                        className="mr-2 text-blue-600 focus:ring-blue-500 h-4 w-4"
+                      />
+                      <span className="text-gray-700 dark:text-gray-300 font-medium">Kỹ thuật</span>
+                    </label>
+                    <label className="flex items-center cursor-pointer bg-white dark:bg-gray-800 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-600 hover:border-blue-500 transition">
+                      <input 
+                        type="radio" 
+                        disabled={isPublished}
+                        name={`task_type_${a.id}`} 
+                        value="both"
+                        checked={a.ui_task_type === 'both'}
+                        onChange={() => updateAssignment(a.id, 'ui_task_type', 'both')}
+                        className="mr-2 text-blue-600 focus:ring-blue-500 h-4 w-4"
+                      />
+                      <span className="text-gray-700 dark:text-gray-300 font-medium">Cả hai</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {(a.ui_task_type === 'cleaning' || a.ui_task_type === 'both') && (
+                    <div className="animate-in fade-in zoom-in-95 duration-200">
+                      <label className="block text-sm font-medium text-blue-700 dark:text-blue-400 mb-1">Mô tả công việc Vệ sinh</label>
+                      <textarea
+                        disabled={isPublished}
+                        value={a.ui_cleaning_desc || ''}
+                        onChange={(e) => updateAssignment(a.id, 'ui_cleaning_desc', e.target.value)}
+                        placeholder="Nhập chi tiết công việc vệ sinh..."
+                        className="w-full bg-white dark:bg-gray-800 border border-blue-200 dark:border-blue-900/50 rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-500 min-h-[80px]"
+                      />
+                    </div>
+                  )}
+                  
+                  {(a.ui_task_type === 'technical' || a.ui_task_type === 'both') && (
+                    <div className="animate-in fade-in zoom-in-95 duration-200">
+                      <label className="block text-sm font-medium text-purple-700 dark:text-purple-400 mb-1">Mô tả công việc Kỹ thuật</label>
+                      <textarea
+                        disabled={isPublished}
+                        value={a.ui_technical_desc || ''}
+                        onChange={(e) => updateAssignment(a.id, 'ui_technical_desc', e.target.value)}
+                        placeholder="Nhập chi tiết công việc kỹ thuật..."
+                        className="w-full bg-white dark:bg-gray-800 border border-purple-200 dark:border-purple-900/50 rounded-xl p-3 outline-none focus:ring-2 focus:ring-purple-500 min-h-[80px]"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
