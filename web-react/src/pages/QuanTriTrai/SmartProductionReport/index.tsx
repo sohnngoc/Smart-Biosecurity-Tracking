@@ -34,6 +34,7 @@ export default function SmartProductionReport() {
   const [year] = useState(2026);
   const [week] = useState(26);
   const [activeTab, setActiveTab] = useState('target_actual');
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   const { data, loading, error } = useProductionReport(farmId, year, week);
 
@@ -60,10 +61,43 @@ export default function SmartProductionReport() {
               Bộ lọc
             </button>
           </div>
-          <button className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg shadow-sm flex items-center gap-2 transition-colors">
-            <Download size={18} />
-            <span className="hidden sm:inline">Xuất báo cáo</span>
-          </button>
+          <div className="relative">
+            <button 
+              onClick={() => setShowExportMenu(!showExportMenu)}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg shadow-sm flex items-center gap-2 transition-colors"
+            >
+              <Download size={18} />
+              <span className="hidden sm:inline">Xuất báo cáo</span>
+            </button>
+            
+            {showExportMenu && (
+              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 z-50 overflow-hidden">
+                <div className="py-1">
+                  <button 
+                    onClick={() => { setShowExportMenu(false); alert('Đang xuất báo cáo định dạng Spreadsheet (Excel)...'); }}
+                    className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 flex items-center gap-2"
+                  >
+                    <FileText size={16} className="text-green-600" />
+                    Spreadsheet (Excel)
+                  </button>
+                  <button 
+                    onClick={() => { setShowExportMenu(false); alert('Đang xuất báo cáo định dạng CSV...'); }}
+                    className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 flex items-center gap-2"
+                  >
+                    <Download size={16} className="text-blue-600" />
+                    CSV Document
+                  </button>
+                  <button 
+                    onClick={() => { setShowExportMenu(false); alert('Đang xuất báo cáo định dạng PDF...'); }}
+                    className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 flex items-center gap-2"
+                  >
+                    <FileText size={16} className="text-red-600" />
+                    PDF Report
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
