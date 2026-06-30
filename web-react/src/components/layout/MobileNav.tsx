@@ -26,35 +26,44 @@ interface MobileNavProps {
 
 export const MENU_SECTIONS = [
   {
-    title: "Theo dõi & Báo cáo",
+    title: "Theo dõi trại",
     items: [
       { name: 'Tổng quan', path: '/tong-quan', icon: <LayoutDashboard size={20} />, isMain: true },
       { name: 'Bản đồ chuồng', path: '/ban-do-noi-bo', icon: <Map size={20} />, isMain: true },
-      { name: 'Báo cáo sản xuất', path: '/bao-cao-san-xuat', icon: <FileText size={20} /> },
-    ]
-  },
-  {
-    title: "Quản lý công việc",
-    items: [
-      { name: 'Phân công', path: '/phan-cong-cong-viec', icon: <ClipboardList size={20} />, isMain: true },
-      { name: 'Việc được giao', path: '/cong-viec-duoc-giao', icon: <CheckCircle size={20} /> },
-      { name: 'Đánh giá định kỳ', path: '/danh-gia-dinh-ky', icon: <ClipboardCheck size={20} /> },
     ]
   },
   {
     title: "An ninh sinh học",
     items: [
-      { name: 'Cảnh báo', path: '/canh-bao', icon: <AlertTriangle size={20} />, isMain: true },
       { name: 'Đăng ký vào trại', path: '/dang-ky-vao-trai', icon: <FileText size={20} /> },
       { name: 'Duyệt vào trại', path: '/duyet-vao-trai', icon: <ShieldCheck size={20} /> },
       { name: 'Giám sát ra/vào', path: '/nguoi-ra-vao', icon: <Users size={20} /> },
     ]
   },
   {
-    title: "Quản trị hệ thống",
+    title: "Quản lý công việc",
     items: [
-      { name: 'Nhân sự', path: '/nhan-su', icon: <UserCog size={20} /> },
+      { name: 'Phân công', path: '/phan-cong-cong-viec', icon: <ClipboardList size={20} />, isMain: true },
+      { name: 'Việc được giao', path: '/cong-viec-duoc-giao', icon: <CheckCircle size={20} />, isMain: true },
+    ]
+  },
+  {
+    title: "Vận hành trại",
+    items: [
+      { name: 'Chuồng & Bàn giao heo', path: '/piglet-transfer', icon: <ClipboardList size={20} /> },
+      { name: '- Kiểm tra chuồng', path: '/piglet-transfer/pen-check', icon: <CheckCircle size={20} /> },
+      { name: '- Bàn giao cai sữa', path: '/piglet-transfer/handover', icon: <ClipboardCheck size={20} /> },
+      { name: '- Nhận heo cai sữa', path: '/piglet-transfer/receiving', icon: <ClipboardCheck size={20} /> },
+    ]
+  },
+  {
+    title: "Hệ thống & Báo cáo",
+    items: [
+      { name: 'Báo cáo sản xuất', path: '/bao-cao-san-xuat', icon: <FileText size={20} /> },
       { name: 'Thiết bị', path: '/thiet-bi', icon: <Settings size={20} /> },
+      { name: 'Cảnh báo', path: '/canh-bao', icon: <AlertTriangle size={20} /> },
+      { name: 'Đánh giá ATSH', path: '/danh-gia-dinh-ky', icon: <ClipboardCheck size={20} /> },
+      { name: 'Nhân sự', path: '/nhan-su', icon: <UserCog size={20} /> },
     ]
   },
   {
@@ -66,8 +75,8 @@ export const MENU_SECTIONS = [
   }
 ];
 
-export const MAIN_MENU = MENU_SECTIONS.flatMap(s => s.items).filter(i => i.isMain);
-export const EXTRA_MENU = MENU_SECTIONS.flatMap(s => s.items).filter(i => !i.isMain);
+export const MAIN_MENU = MENU_SECTIONS.flatMap(s => s.items).filter(i => (i as any).isMain);
+export const EXTRA_MENU = MENU_SECTIONS.flatMap(s => s.items).filter(i => !(i as any).isMain);
 
 export default function MobileNav({ farmCode }: MobileNavProps) {
   const location = useLocation();
@@ -152,7 +161,7 @@ export default function MobileNav({ farmCode }: MobileNavProps) {
                     <h3 className="px-4 text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
                       {section.title}
                     </h3>
-                    {section.items.filter(i => !i.isMain).map((item) => {
+                    {section.items.filter(i => !(i as any).isMain).map((item) => {
                       const fullPath = `/trai/${farmCode}${item.path}`;
                       const isActive = location.pathname.includes(fullPath);
                       return (

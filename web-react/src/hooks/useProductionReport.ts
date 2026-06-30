@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { generateProductionInsights } from '../utils/reportUtils';
+import { generateProductionInsights, generatePigletTransferInsights } from '../utils/reportUtils';
 
 export function useProductionReport(farmId: string | undefined, year: number, week: number) {
   const [data, setData] = useState<any>(null);
@@ -107,6 +107,13 @@ export function useProductionReport(farmId: string | undefined, year: number, we
           .eq('farm_id', farmId)
           .eq('year', year);
 
+        // Fetch Piglet Transfers
+        const [pcRes, hoRes, recRes] = await Promise.all([
+          supabase.from('pen_checks').select('*').eq('farm_id', farmId),
+          supabase.from('piglet_handovers').select('*').eq('dest_farm_id', farmId),
+          supabase.from('piglet_receivings').select('*').eq('farm_id', farmId)
+        ]);
+
         const combinedData = {
           report,
           breeding,
@@ -118,14 +125,21 @@ export function useProductionReport(farmId: string | undefined, year: number, we
           vaccineSchedules,
           giltBatches,
           herdGrowthPlans,
-          targets
+          targets,
+          pigletTransfers: {
+            pen_checks: pcRes.data,
+            handovers: hoRes.data,
+            receivings: recRes.data
+          }
         };
 
         const insights = generateProductionInsights(combinedData);
+        
+        const pigletInsights = generatePigletTransferInsights(combinedData.pigletTransfers);
 
         setData({
           ...combinedData,
-          insights
+          insights: [...insights, ...pigletInsights]
         });
       } catch (err: any) {
         console.error('Error fetching production report:', err);

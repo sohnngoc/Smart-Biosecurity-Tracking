@@ -123,3 +123,124 @@ export function generateProductionInsights(data: any): any[] {
 
   return insights;
 }
+
+export function generatePigletTransferInsights(pigletData: any): any[] {
+  const insights: any[] = [];
+  if (!pigletData) return insights;
+
+  const { pen_checks, handovers, receivings } = pigletData;
+
+  if (pen_checks && pen_checks.length > 0) {
+    pen_checks.forEach((pc: any) => {
+      if (pc.result !== 'ready' && pc.status !== 'approved') {
+        insights.push({
+          severity: 'critical',
+          category: 'pen_preparation',
+          title: 'Chuồng chưa sẵn sàng nhận heo',
+          description: `Mã chuồng: ${pc.barn_id || 'N/A'}. Trạng thái kiểm tra: ${pc.result || 'Chưa đạt'}.`,
+          recommended_action: 'Hoàn tất vệ sinh, sát trùng và kiểm tra lại trước khi nhận.',
+          assignee: 'Quản lý trại nhận',
+          deadline: 'Trước khi heo tới',
+          reference_id: pc.id
+        });
+      }
+    });
+  }
+
+  if (receivings && receivings.length > 0) {
+    receivings.forEach((rec: any) => {
+      const handover = handovers?.find((h: any) => h.id === rec.handover_id);
+      
+      if (handover) {
+        if (rec.actual_total_qty !== handover.total_handover_qty) {
+          insights.push({
+            severity: 'critical',
+            category: 'quantity',
+            title: 'Sai lệch số lượng heo con khi tiếp nhận',
+            description: `Thực nhận: ${rec.actual_total_qty} con, Bàn giao: ${handover.total_handover_qty} con. Lệch: ${rec.discrepancy_qty}.`,
+            recommended_action: 'Xác minh lại với lái xe và trại xuất. Tạo claim trên hệ thống.',
+            assignee: 'Bác sĩ thú y trại nhận',
+            deadline: '24 giờ',
+            reference_id: rec.id
+          });
+        }
+
+        if (rec.quality_result === 'fail' || rec.weak_pigs > 0 || rec.dead_on_arrival > 0) {
+          insights.push({
+            severity: rec.quality_result === 'fail' ? 'critical' : 'warning',
+            category: 'quality',
+            title: 'Heo con tiếp nhận có vấn đề chất lượng',
+            description: `Đánh giá: ${rec.quality_result === 'fail' ? 'Không đạt' : 'Cảnh báo'}. Heo chết: ${rec.dead_on_arrival}, Yếu/Còi: ${rec.weak_pigs}.`,
+            recommended_action: 'Thực hiện quy trình cách ly và điều trị đặc biệt. Lập biên bản đền bù.',
+            assignee: 'Bác sĩ thú y',
+            deadline: '72 giờ',
+            reference_id: rec.id
+          });
+        }
+
+        if ((rec.weak_pigs > 0 || rec.dead_on_arrival > 0 || rec.discrepancy_qty !== 0) && (!rec.evidence_photo_urls || rec.evidence_photo_urls.length === 0)) {
+           insights.push({
+            severity: 'warning',
+            category: 'compliance',
+            title: 'Thiếu ảnh minh chứng sự cố',
+            description: 'Phát hiện sai lệch số lượng hoặc heo chết nhưng không có ảnh chụp đính kèm.',
+            recommended_action: 'Cập nhật ảnh minh chứng để submit claim.',
+            assignee: 'Nhân viên nhận heo',
+            deadline: '24 giờ',
+            reference_id: rec.id
+          });
+        }
+
+        if (handover.vaccine_info && Array.isArray(handover.vaccine_info)) {
+          let hasShortage = false;
+          handover.vaccine_info.forEach((v: any) => {
+             if (v.qty < handover.total_handover_qty) hasShortage = true;
+          });
+          if (hasShortage || handover.vaccine_info.length === 0) {
+            insights.push({
+              severity: 'warning',
+              category: 'vaccine',
+              title: 'Thông tin vaccine chưa đầy đủ',
+              description: 'Dữ liệu vaccine bị thiếu hoặc số liều tiêm ít hơn số lượng heo bàn giao.',
+              recommended_action: 'Kiểm tra lại sổ tay vaccine của trại xuất.',
+              assignee: 'Bác sĩ thú y trại nái',
+              deadline: '72 giờ',
+              reference_id: handover.id
+            });
+          }
+        }
+
+        if (rec.actual_avg_weight_kg && rec.actual_avg_weight_kg < 6.0) {
+           insights.push({
+              severity: 'warning',
+              category: 'weight',
+              title: 'Trọng lượng bình quân thấp hơn chuẩn',
+              description: `BQ thực tế: ${rec.actual_avg_weight_kg}kg, dưới chuẩn cai sữa (6.0kg).`,
+              recommended_action: 'Báo cáo bộ phận dinh dưỡng để điều chỉnh cám úm.',
+              assignee: 'Quản lý trại',
+              deadline: '7 ngày',
+              reference_id: rec.id
+            });
+        }
+      }
+
+      if (rec.vehicle_plate && rec.discrepancy_qty !== undefined) {
+        // Just mock trigger for biosecurity demo
+        if (rec.vehicle_plate.includes('99')) {
+          insights.push({
+            severity: 'critical',
+            category: 'biosecurity',
+            title: 'Xe vận chuyển chưa đủ điều kiện ATSH',
+            description: `Xe ${rec.vehicle_plate} không có log sát trùng tại trạm trung chuyển.`,
+            recommended_action: 'Kiểm tra lại hệ thống camera cổng và log phun thuốc.',
+            assignee: 'Bảo vệ cổng',
+            deadline: 'Ngay lập tức',
+            reference_id: rec.id
+          });
+        }
+      }
+    });
+  }
+
+  return insights;
+}

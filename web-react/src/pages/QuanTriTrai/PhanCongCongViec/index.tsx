@@ -34,6 +34,11 @@ interface Shower {
   max_capacity: number;
 }
 
+interface Farm {
+  id: string;
+  name: string;
+}
+
 interface Assignment {
   id: string;
   employee_id: string;
@@ -46,9 +51,14 @@ interface Assignment {
   biosecurity_level: string;
   status: string;
   // UI only fields for new requirement
-  ui_task_type?: 'cleaning' | 'technical' | 'both';
+  ui_task_type?: 'cleaning' | 'technical' | 'both' | 'pen_check' | 'handover' | 'receiving';
   ui_cleaning_desc?: string;
   ui_technical_desc?: string;
+  ui_source_farm_id?: string;
+  ui_dest_farm_id?: string;
+  ui_expected_time?: string;
+  ui_expected_qty?: number;
+  ui_reviewer_id?: string;
 }
 
 export default function PhanCongCongViec() {
@@ -59,6 +69,7 @@ export default function PhanCongCongViec() {
   const [zones, setZones] = useState<Zone[]>([]);
   const [barns, setBarns] = useState<Barn[]>([]);
   const [showers, setShowers] = useState<Shower[]>([]);
+  const [farms, setFarms] = useState<Farm[]>([]);
   
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
@@ -79,19 +90,22 @@ export default function PhanCongCongViec() {
       setEmployees([
         { id: 'mock-1', full_name: 'Nguyễn Văn A', job_title: 'Kỹ thuật viên', employee_code: 'EMP-001', department: 'Kỹ thuật' },
         { id: 'mock-2', full_name: 'Trần Thị B', job_title: 'Công nhân vệ sinh', employee_code: 'EMP-002', department: 'Vệ sinh' },
-        { id: 'mock-3', full_name: 'Lê Văn C', job_title: 'Bảo vệ', employee_code: 'EMP-003', department: 'An ninh' }
+        { id: 'mock-3', full_name: 'Lê Văn C', job_title: 'Bác sĩ thú y', employee_code: 'EMP-003', department: 'Kỹ thuật' }
       ]);
     }
   };
 
   const fetchMasterData = async () => {
     await fetchEmployees();
-    const [zoneRes, barnRes, showerRes] = await Promise.all([
+    const [zoneRes, barnRes, showerRes, farmRes] = await Promise.all([
       supabase.from('farm_zones').select('*').eq('farm_id', farmId),
       supabase.from('barns').select('*, farm_zones!inner(farm_id)').eq('farm_zones.farm_id', farmId),
-      supabase.from('shower_rooms').select('*, checkpoints!inner(farm_id)').eq('checkpoints.farm_id', farmId)
+      supabase.from('shower_rooms').select('*, checkpoints!inner(farm_id)').eq('checkpoints.farm_id', farmId),
+      supabase.from('farms').select('*')
     ]);
     
+    if (farmRes.data) setFarms(farmRes.data);
+
     let finalZones: Zone[] = [];
     if (zoneRes.data && zoneRes.data.length > 0) {
       finalZones = zoneRes.data;
@@ -150,12 +164,16 @@ export default function PhanCongCongViec() {
       if (tasks && tasks.length > 0) {
         setIsPublished(true);
         const parsedTasks = tasks.map((t: any) => {
-          let ui_task_type: 'cleaning' | 'technical' | 'both' = 'cleaning';
+          let ui_task_type: 'cleaning' | 'technical' | 'both' | 'pen_check' | 'handover' | 'receiving' = 'cleaning';
           let ui_cleaning_desc = '';
           let ui_technical_desc = '';
           const desc = t.task_description || '';
+          const meta = t.metadata || {};
           
-          if (desc.includes('[Vệ sinh]') && desc.includes('[Kỹ thuật]')) {
+          if (t.task_category === 'pen_check') ui_task_type = 'pen_check';
+          else if (t.task_category === 'handover') ui_task_type = 'handover';
+          else if (t.task_category === 'receiving') ui_task_type = 'receiving';
+          else if (desc.includes('[Vệ sinh]') && desc.includes('[Kỹ thuật]')) {
              ui_task_type = 'both';
              const parts = desc.split('[Kỹ thuật]');
              ui_cleaning_desc = parts[0].replace('[Vệ sinh]', '').trim();
@@ -169,7 +187,17 @@ export default function PhanCongCongViec() {
           } else {
              ui_cleaning_desc = desc;
           }
-          return { ...t, ui_task_type, ui_cleaning_desc, ui_technical_desc };
+          return { 
+            ...t, 
+            ui_task_type, 
+            ui_cleaning_desc, 
+            ui_technical_desc,
+            ui_source_farm_id: meta.source_farm_id || '',
+            ui_dest_farm_id: meta.dest_farm_id || '',
+            ui_expected_time: meta.expected_time || '',
+            ui_expected_qty: meta.expected_qty || '',
+            ui_reviewer_id: meta.reviewer_id || '',
+          };
         });
         setAssignments(parsedTasks);
       } else {
@@ -188,6 +216,11 @@ export default function PhanCongCongViec() {
     assignments.forEach((a, idx) => {
       if (!a.employee_id) {
         errors.push(`Công việc dòng thứ ${idx + 1} chưa chọn nhân sự.`);
+      }
+      if (['pen_check', 'handover', 'receiving'].includes(a.ui_task_type || '')) {
+        if (!a.ui_source_farm_id) errors.push(`Công việc dòng thứ ${idx + 1}: Thiếu Trại xuất.`);
+        if (!a.ui_dest_farm_id) errors.push(`Công việc dòng thứ ${idx + 1}: Thiếu Trại đích.`);
+        if (!a.ui_reviewer_id) errors.push(`Công việc dòng thứ ${idx + 1}: Thiếu Người duyệt.`);
       }
     });
 
@@ -265,15 +298,41 @@ export default function PhanCongCongViec() {
     if (plan && assignments.length > 0) {
       const tasksToInsert = assignments.map(a => {
         let combinedDesc = a.task_description;
+        let category = a.task_category;
+        let metadata: any = null;
+
         if (a.ui_task_type) {
-          if (a.ui_task_type === 'cleaning') combinedDesc = `[Vệ sinh] ${a.ui_cleaning_desc || ''}`;
-          else if (a.ui_task_type === 'technical') combinedDesc = `[Kỹ thuật] ${a.ui_technical_desc || ''}`;
-          else if (a.ui_task_type === 'both') combinedDesc = `[Vệ sinh] ${a.ui_cleaning_desc || ''}\n[Kỹ thuật] ${a.ui_technical_desc || ''}`;
+          if (a.ui_task_type === 'cleaning') {
+            combinedDesc = `[Vệ sinh] ${a.ui_cleaning_desc || ''}`;
+            category = 'sanitation';
+          } else if (a.ui_task_type === 'technical') {
+            combinedDesc = `[Kỹ thuật] ${a.ui_technical_desc || ''}`;
+            category = 'technical';
+          } else if (a.ui_task_type === 'both') {
+            combinedDesc = `[Vệ sinh] ${a.ui_cleaning_desc || ''}\n[Kỹ thuật] ${a.ui_technical_desc || ''}`;
+            category = 'both';
+          } else if (['pen_check', 'handover', 'receiving'].includes(a.ui_task_type)) {
+            category = a.ui_task_type;
+            const labels = {
+              'pen_check': '[Kiểm tra chuồng]',
+              'handover': '[Bàn giao heo]',
+              'receiving': '[Nhận heo cai sữa]'
+            };
+            combinedDesc = `${labels[a.ui_task_type as keyof typeof labels]} ${a.task_description || ''}`;
+            metadata = {
+              form_type: a.ui_task_type,
+              source_farm_id: a.ui_source_farm_id,
+              dest_farm_id: a.ui_dest_farm_id,
+              expected_time: a.ui_expected_time,
+              expected_qty: a.ui_expected_qty,
+              reviewer_id: a.ui_reviewer_id
+            };
+          }
         }
         
         return {
           employee_id: a.employee_id,
-          task_category: a.task_category,
+          task_category: category,
           zone_id: a.zone_id,
           barn_id: a.barn_id,
           assigned_shower_id: a.assigned_shower_id,
@@ -281,7 +340,8 @@ export default function PhanCongCongViec() {
           task_description: combinedDesc,
           biosecurity_level: a.biosecurity_level,
           status: 'assigned',
-          plan_id: plan!.id
+          plan_id: plan!.id,
+          metadata
         };
       });
       const res = await supabase.from('assigned_tasks').insert(tasksToInsert);
@@ -309,7 +369,9 @@ export default function PhanCongCongViec() {
       status: 'draft',
       ui_task_type: 'cleaning',
       ui_cleaning_desc: '',
-      ui_technical_desc: ''
+      ui_technical_desc: '',
+      ui_source_farm_id: farmId,
+      ui_dest_farm_id: farmId,
     }]);
   };
 
@@ -320,6 +382,8 @@ export default function PhanCongCongViec() {
   const removeAssignment = (id: string) => {
     setAssignments(assignments.filter(a => a.id !== id));
   };
+
+  const reviewers = employees.filter(e => e.job_title?.toLowerCase().includes('bác sĩ') || e.job_title?.toLowerCase().includes('quản lý'));
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -394,12 +458,15 @@ export default function PhanCongCongViec() {
             Chưa có công việc nào được phân công. Hãy nhấn "Thêm công việc" hoặc "Chép từ hôm qua".
           </div>
         ) : (
-          assignments.map((a, idx) => (
+          assignments.map((a, idx) => {
+            const isPigletTask = ['pen_check', 'handover', 'receiving'].includes(a.ui_task_type || '');
+            
+            return (
             <div key={a.id} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm hover:shadow-md transition relative">
               
               <div className="flex justify-between items-center mb-4 pb-3 border-b border-gray-100 dark:border-gray-700">
                 <h4 className="font-bold text-lg text-gray-800 dark:text-gray-200 flex items-center">
-                  <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-md mr-3 text-sm">#{idx + 1}</span>
+                  <span className={`px-2 py-1 rounded-md mr-3 text-sm ${isPigletTask ? 'bg-indigo-100 text-indigo-700' : 'bg-blue-100 text-blue-700'}`}>#{idx + 1}</span>
                   Giao việc
                 </h4>
                 {!isPublished && (
@@ -475,8 +542,8 @@ export default function PhanCongCongViec() {
 
               {/* Task Type & Details */}
               <div className="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-5 border border-gray-100 dark:border-gray-600">
-                <div className="mb-4 flex flex-col md:flex-row md:items-center gap-4">
-                  <label className="text-sm font-bold text-gray-700 dark:text-gray-300 whitespace-nowrap">Loại công việc:</label>
+                <div className="mb-4 flex flex-col md:flex-row md:items-start gap-4">
+                  <label className="text-sm font-bold text-gray-700 dark:text-gray-300 whitespace-nowrap mt-2">Loại công việc:</label>
                   <div className="flex flex-wrap gap-4">
                     <label className="flex items-center cursor-pointer bg-white dark:bg-gray-800 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-600 hover:border-blue-500 transition">
                       <input 
@@ -514,8 +581,79 @@ export default function PhanCongCongViec() {
                       />
                       <span className="text-gray-700 dark:text-gray-300 font-medium">Cả hai</span>
                     </label>
+                    <div className="w-full h-px bg-slate-200 dark:bg-slate-700 my-1 hidden lg:block"></div>
+                    <label className="flex items-center cursor-pointer bg-indigo-50 dark:bg-indigo-900/20 px-4 py-2 rounded-lg border border-indigo-200 dark:border-indigo-800 hover:border-indigo-500 transition">
+                      <input 
+                        type="radio" 
+                        disabled={isPublished}
+                        name={`task_type_${a.id}`} 
+                        value="pen_check"
+                        checked={a.ui_task_type === 'pen_check'}
+                        onChange={() => updateAssignment(a.id, 'ui_task_type', 'pen_check')}
+                        className="mr-2 text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                      />
+                      <span className="text-indigo-700 dark:text-indigo-300 font-medium">Kiểm tra chuồng</span>
+                    </label>
+                    <label className="flex items-center cursor-pointer bg-indigo-50 dark:bg-indigo-900/20 px-4 py-2 rounded-lg border border-indigo-200 dark:border-indigo-800 hover:border-indigo-500 transition">
+                      <input 
+                        type="radio" 
+                        disabled={isPublished}
+                        name={`task_type_${a.id}`} 
+                        value="handover"
+                        checked={a.ui_task_type === 'handover'}
+                        onChange={() => updateAssignment(a.id, 'ui_task_type', 'handover')}
+                        className="mr-2 text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                      />
+                      <span className="text-indigo-700 dark:text-indigo-300 font-medium">Bàn giao heo con</span>
+                    </label>
+                    <label className="flex items-center cursor-pointer bg-indigo-50 dark:bg-indigo-900/20 px-4 py-2 rounded-lg border border-indigo-200 dark:border-indigo-800 hover:border-indigo-500 transition">
+                      <input 
+                        type="radio" 
+                        disabled={isPublished}
+                        name={`task_type_${a.id}`} 
+                        value="receiving"
+                        checked={a.ui_task_type === 'receiving'}
+                        onChange={() => updateAssignment(a.id, 'ui_task_type', 'receiving')}
+                        className="mr-2 text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                      />
+                      <span className="text-indigo-700 dark:text-indigo-300 font-medium">Nhận heo cai sữa</span>
+                    </label>
                   </div>
                 </div>
+
+                {isPigletTask && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
+                    <div>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">Trại xuất</label>
+                      <select disabled={isPublished} value={a.ui_source_farm_id || ''} onChange={e => updateAssignment(a.id, 'ui_source_farm_id', e.target.value)} className="w-full p-2 border rounded">
+                        <option value="">-- Chọn trại --</option>
+                        {farms.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">Trại nhận</label>
+                      <select disabled={isPublished} value={a.ui_dest_farm_id || ''} onChange={e => updateAssignment(a.id, 'ui_dest_farm_id', e.target.value)} className="w-full p-2 border rounded">
+                        <option value="">-- Chọn trại --</option>
+                        {farms.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">Thời gian dự kiến</label>
+                      <input type="datetime-local" disabled={isPublished} value={a.ui_expected_time || ''} onChange={e => updateAssignment(a.id, 'ui_expected_time', e.target.value)} className="w-full p-2 border rounded"/>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">Số lượng dự kiến</label>
+                      <input type="number" disabled={isPublished} value={a.ui_expected_qty || ''} onChange={e => updateAssignment(a.id, 'ui_expected_qty', Number(e.target.value))} className="w-full p-2 border rounded"/>
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-xs font-medium text-slate-600 mb-1">Người duyệt (Bác sĩ / Quản lý)</label>
+                      <select disabled={isPublished} value={a.ui_reviewer_id || ''} onChange={e => updateAssignment(a.id, 'ui_reviewer_id', e.target.value)} className="w-full p-2 border rounded">
+                        <option value="">-- Chọn người duyệt --</option>
+                        {reviewers.map(r => <option key={r.id} value={r.id}>{r.full_name} - {r.job_title}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {(a.ui_task_type === 'cleaning' || a.ui_task_type === 'both') && (
@@ -543,10 +681,24 @@ export default function PhanCongCongViec() {
                       />
                     </div>
                   )}
+
+                  {(a.ui_task_type === 'pen_check' || a.ui_task_type === 'handover' || a.ui_task_type === 'receiving') && (
+                    <div className="animate-in fade-in zoom-in-95 duration-200 col-span-1 md:col-span-2">
+                      <label className="block text-sm font-medium text-indigo-700 dark:text-indigo-400 mb-1">Ghi chú & Yêu cầu cụ thể</label>
+                      <textarea
+                        disabled={isPublished}
+                        value={a.task_description || ''}
+                        onChange={(e) => updateAssignment(a.id, 'task_description', e.target.value)}
+                        placeholder="Nhập ghi chú hoặc yêu cầu cụ thể (VD: Chú ý máng ăn chuồng 3)..."
+                        className="w-full bg-white dark:bg-gray-800 border border-indigo-200 dark:border-indigo-900/50 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 min-h-[80px]"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
-          ))
+          );
+          })
         )}
       </div>
     </div>

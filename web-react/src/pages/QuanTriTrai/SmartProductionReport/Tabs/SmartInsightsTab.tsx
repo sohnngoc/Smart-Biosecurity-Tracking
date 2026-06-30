@@ -37,35 +37,68 @@ export default function SmartInsightsTab({ insights }: { insights: any[] }) {
         {insights.map((insight, idx) => (
           <div 
             key={idx} 
-            className={cn("p-4 rounded-xl border flex gap-4 items-start transition-shadow hover:shadow-md", getBgClass(insight.severity))}
+            className={cn("p-4 rounded-xl border flex flex-col md:flex-row gap-4 items-start transition-shadow hover:shadow-md", getBgClass(insight.severity))}
           >
-            <div className="mt-1">
+            <div className="mt-1 shrink-0">
               {getIcon(insight.severity)}
             </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1">
+            <div className="flex-1 w-full">
+              <div className="flex flex-wrap items-center gap-2 mb-1">
                 <h4 className="font-bold text-slate-800 dark:text-slate-100">{insight.title}</h4>
                 <span className="text-xs px-2 py-0.5 rounded-full bg-white/60 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 font-medium capitalize">
                   {insight.category}
                 </span>
               </div>
-              <p className="text-sm text-slate-600 dark:text-slate-300 mb-2">
+              <p className="text-sm text-slate-600 dark:text-slate-300 mb-3">
                 {insight.description}
               </p>
-              {insight.recommended_action && (
-                <div className="mt-3 p-3 bg-white/50 dark:bg-slate-800/50 rounded-lg text-sm text-slate-700 dark:text-slate-200 border border-slate-200/50 dark:border-slate-700/50">
-                  <span className="font-semibold block mb-1">Đề xuất hành động:</span>
-                  {insight.recommended_action}
-                </div>
-              )}
-            </div>
-            {insight.recommended_action && (
-              <div className="shrink-0">
-                <button className="px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-sm font-medium rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 text-emerald-600 transition-colors">
-                  Tạo Task
-                </button>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                {insight.recommended_action && (
+                  <div className="p-3 bg-white/60 dark:bg-slate-800/60 rounded-lg text-sm text-slate-700 dark:text-slate-200 border border-slate-200/50 dark:border-slate-700/50">
+                    <span className="font-semibold block mb-1 text-slate-500 text-xs uppercase tracking-wider">Hành động đề xuất:</span>
+                    {insight.recommended_action}
+                  </div>
+                )}
+                
+                {(insight.assignee || insight.deadline) && (
+                  <div className="p-3 bg-white/60 dark:bg-slate-800/60 rounded-lg text-sm text-slate-700 dark:text-slate-200 border border-slate-200/50 dark:border-slate-700/50 flex flex-col justify-center">
+                    {insight.assignee && (
+                      <p><span className="font-semibold text-slate-500 text-xs uppercase tracking-wider mr-2">Phụ trách:</span> {insight.assignee}</p>
+                    )}
+                    {insight.deadline && (
+                      <p className="mt-1"><span className="font-semibold text-slate-500 text-xs uppercase tracking-wider mr-2">Deadline:</span> <span className="font-medium text-red-600">{insight.deadline}</span></p>
+                    )}
+                  </div>
+                )}
               </div>
-            )}
+
+              {/* Action Buttons */}
+              <div className="flex flex-wrap gap-2 mt-2">
+                {insight.reference_id ? (
+                  <>
+                    <button className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors">
+                      Tạo task khắc phục
+                    </button>
+                    <button onClick={() => window.location.href = `/trai/${window.location.pathname.split('/')[2]}/piglet-transfer`} className="px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm font-medium rounded-lg shadow-sm border border-slate-300 dark:border-slate-600 transition-colors">
+                      Xem biên bản
+                    </button>
+                  </>
+                ) : insight.recommended_action ? (
+                  <div className="shrink-0">
+                    {insight.recommended_action.toLowerCase().includes('bàn giao') || insight.recommended_action.toLowerCase().includes('cai sữa') ? (
+                      <button onClick={() => window.location.href = `/trai/${window.location.pathname.split('/')[2]}/piglet-transfer`} className="px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-sm font-medium rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 text-blue-600 transition-colors">
+                        Mở Bàn Giao
+                      </button>
+                    ) : (
+                      <button className="px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-sm font-medium rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 text-emerald-600 transition-colors">
+                        Tạo Task
+                      </button>
+                    )}
+                  </div>
+                ) : null}
+              </div>
+            </div>
           </div>
         ))}
       </div>

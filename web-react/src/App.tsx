@@ -18,6 +18,10 @@ import MoPhongIoT from './pages/QuanTriTrai/MoPhongIoT';
 import BaoCaoThongMinh from './pages/QuanTriTrai/BaoCao/BaoCaoThongMinh';
 import SmartProductionReport from './pages/QuanTriTrai/SmartProductionReport/index';
 import DanhGiaDinhKy from './pages/QuanTriTrai/DanhGiaDinhKy';
+import PigletTransfer from './pages/QuanTriTrai/PigletTransfer/index';
+import PigletPenCheck from './pages/QuanTriTrai/PigletTransfer/PenCheck';
+import PigletHandover from './pages/QuanTriTrai/PigletTransfer/Handover';
+import PigletReceiving from './pages/QuanTriTrai/PigletTransfer/Receiving';
 
 // Visit Request Global Pages
 import DangKyVaoTrai from './pages/DangKyVaoTrai';
@@ -58,6 +62,10 @@ function App() {
           <Route path="danh-gia-dinh-ky" element={<DanhGiaDinhKy />} />
           <Route path="bao-cao-thong-minh" element={<BaoCaoThongMinh />} />
           <Route path="bao-cao-san-xuat" element={<SmartProductionReport />} />
+          <Route path="piglet-transfer" element={<PigletTransfer />} />
+          <Route path="piglet-transfer/pen-check" element={<PigletPenCheck />} />
+          <Route path="piglet-transfer/handover" element={<PigletHandover />} />
+          <Route path="piglet-transfer/receiving" element={<PigletReceiving />} />
           <Route path="mo-phong-iot" element={<MoPhongIoT />} />
           <Route path="mo-phong-rui-ro" element={<MoPhongRuiRo />} />
         </Route>
