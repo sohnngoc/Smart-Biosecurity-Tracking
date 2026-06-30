@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { Fingerprint, Search, Wifi, WifiOff, Battery, Clock } from 'lucide-react';
+import { Fingerprint, Search, Wifi, WifiOff, Battery, Clock, ArrowLeft, Shield, History } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 
 export const generateMockDevices = () => []; // Stub for TongQuanTrai
@@ -20,6 +20,23 @@ export default function ThietBi() {
   const { farmId } = useOutletContext<{ farmId: string }>();
   const [devices, setDevices] = useState<Device[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
+  const [activeTab, setActiveTab] = useState<'permissions' | 'logs'>('permissions');
+
+  // Mock data for the device modal
+  const mockPermissions = [
+    { id: 1, name: 'Nguyễn Văn A', title: 'Kỹ thuật viên', allowed: true },
+    { id: 2, name: 'Trần Thị B', title: 'Công nhân vệ sinh', allowed: true },
+    { id: 3, name: 'Lê Văn C', title: 'Bảo vệ', allowed: false },
+    { id: 4, name: 'Phạm Thị D', title: 'Quản lý', allowed: true },
+  ];
+
+  const mockLogs = [
+    { id: 1, name: 'Nguyễn Văn A', time: '10:05 AM - Hôm nay', status: 'Hợp lệ' },
+    { id: 2, name: 'Lê Văn C', time: '09:30 AM - Hôm nay', status: 'Từ chối' },
+    { id: 3, name: 'Trần Thị B', time: '08:15 AM - Hôm nay', status: 'Hợp lệ' },
+    { id: 4, name: 'Phạm Thị D', time: '16:45 PM - Hôm qua', status: 'Hợp lệ' },
+  ];
 
   useEffect(() => {
     if (farmId) fetchDevices();
@@ -43,6 +60,92 @@ export default function ThietBi() {
     d.device_serial.toLowerCase().includes(searchTerm.toLowerCase()) ||
     d.checkpoints?.checkpoint_name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  if (selectedDevice) {
+    return (
+      <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+        <div className="flex items-center space-x-4 bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+          <button onClick={() => setSelectedDevice(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition text-gray-500">
+            <ArrowLeft size={24} />
+          </button>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center">
+              Quản trị thiết bị: {selectedDevice.device_name}
+            </h2>
+            <p className="text-gray-500 dark:text-gray-400 mt-1">Serial: {selectedDevice.device_serial} | Vị trí: {selectedDevice.checkpoints?.checkpoint_name || 'Chưa gắn'}</p>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex space-x-2 border-b border-gray-200 dark:border-gray-700">
+          <button
+            onClick={() => setActiveTab('permissions')}
+            className={`flex items-center px-4 py-3 font-medium text-sm border-b-2 transition ${activeTab === 'permissions' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+          >
+            <Shield size={18} className="mr-2"/> Cấp quyền vân tay
+          </button>
+          <button
+            onClick={() => setActiveTab('logs')}
+            className={`flex items-center px-4 py-3 font-medium text-sm border-b-2 transition ${activeTab === 'logs' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+          >
+            <History size={18} className="mr-2"/> Lịch sử quét
+          </button>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'permissions' ? (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 animate-in fade-in duration-300">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-bold text-gray-800 dark:text-white">Danh sách cấp quyền truy cập</h3>
+              <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition">Đồng bộ thiết bị</button>
+            </div>
+            <div className="space-y-3">
+              {mockPermissions.map(p => (
+                <div key={p.id} className="flex justify-between items-center p-4 rounded-xl border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 transition">
+                  <div>
+                    <h4 className="font-bold text-gray-800 dark:text-gray-200">{p.name}</h4>
+                    <p className="text-sm text-gray-500">{p.title}</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" defaultChecked={p.allowed} className="sr-only peer" />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 animate-in fade-in duration-300">
+            <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-6">Nhật ký quét vân tay gần đây</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300 border-b dark:border-gray-700">
+                    <th className="px-4 py-3 rounded-tl-lg font-semibold">Nhân sự</th>
+                    <th className="px-4 py-3 font-semibold">Thời gian</th>
+                    <th className="px-4 py-3 rounded-tr-lg font-semibold">Kết quả</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                  {mockLogs.map(log => (
+                    <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-gray-750/50 transition">
+                      <td className="px-4 py-4 font-medium text-gray-800 dark:text-gray-200">{log.name}</td>
+                      <td className="px-4 py-4 text-sm text-gray-500 dark:text-gray-400">{log.time}</td>
+                      <td className="px-4 py-4">
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${log.status === 'Hợp lệ' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
+                          {log.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -68,7 +171,11 @@ export default function ThietBi() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filteredDevices.map(device => (
-          <div key={device.id} className="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition">
+          <div 
+            key={device.id} 
+            onClick={() => setSelectedDevice(device)}
+            className="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-700 transition cursor-pointer"
+          >
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-center">
                 <div className={`p-2 rounded-lg mr-3 ${device.status === 'online' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
