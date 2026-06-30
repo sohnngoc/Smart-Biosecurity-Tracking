@@ -88,9 +88,47 @@ export default function PhanCongCongViec() {
       supabase.from('shower_rooms').select('*, checkpoints!inner(farm_id)').eq('checkpoints.farm_id', farmId)
     ]);
     
-    if (zoneRes.data) setZones(zoneRes.data);
-    if (barnRes.data) setBarns(barnRes.data);
-    if (showerRes.data) setShowers(showerRes.data);
+    if (zoneRes.data && zoneRes.data.length > 0) {
+      setZones(zoneRes.data);
+    } else {
+      setZones([
+        { id: 'zone-1', zone_name: 'Khu chuồng đẻ', zone_type: 'farrowing', risk_level: 'high' } as Zone,
+        { id: 'zone-2', zone_name: 'Khu chuồng bầu', zone_type: 'gestation', risk_level: 'medium' } as Zone,
+        { id: 'zone-3', zone_name: 'Khu cách ly', zone_type: 'isolation', risk_level: 'isolation' } as Zone,
+        { id: 'zone-4', zone_name: 'Khu phụ trợ', zone_type: 'support', risk_level: 'low' } as Zone
+      ]);
+    }
+
+    if (barnRes.data && barnRes.data.length > 0) {
+      setBarns(barnRes.data);
+    } else {
+      setBarns([
+        { id: 'de1', zone_id: 'zone-1', barn_name: 'Chuồng Đẻ 1', barn_type: 'farrowing' } as Barn,
+        { id: 'de2', zone_id: 'zone-1', barn_name: 'Chuồng Đẻ 2', barn_type: 'farrowing' } as Barn,
+        { id: 'de3', zone_id: 'zone-1', barn_name: 'Chuồng Đẻ 3', barn_type: 'farrowing' } as Barn,
+        { id: 'bau1', zone_id: 'zone-2', barn_name: 'Chuồng Bầu 1', barn_type: 'gestation' } as Barn,
+        { id: 'bau2', zone_id: 'zone-2', barn_name: 'Chuồng Bầu 2', barn_type: 'gestation' } as Barn,
+        { id: 'cach_ly1', zone_id: 'zone-3', barn_name: 'Cách Ly 1', barn_type: 'isolation' } as Barn,
+        { id: 'cach_ly2', zone_id: 'zone-3', barn_name: 'Cách Ly 2', barn_type: 'isolation' } as Barn,
+        { id: 'hau_bi_cl', zone_id: 'zone-3', barn_name: 'Hậu Bị Cách Ly', barn_type: 'isolation' } as Barn,
+        { id: 'kho_thuoc', zone_id: 'zone-4', barn_name: 'Kho Thuốc', barn_type: 'support' } as Barn,
+        { id: 'kho_cam', zone_id: 'zone-4', barn_name: 'Kho Cám', barn_type: 'support' } as Barn,
+        { id: 'sinh_hoat', zone_id: 'zone-4', barn_name: 'Khu Sinh Hoạt', barn_type: 'support' } as Barn,
+        { id: 'cong', zone_id: 'zone-4', barn_name: 'Cổng Trại', barn_type: 'support' } as Barn
+      ]);
+    }
+
+    if (showerRes.data && showerRes.data.length > 0) {
+      setShowers(showerRes.data);
+    } else {
+      setShowers([
+        { id: 'tam1', room_name: 'Tắm 1', max_capacity: 5 } as Shower,
+        { id: 'tam2', room_name: 'Tắm 2', max_capacity: 5 } as Shower,
+        { id: 'tam3', room_name: 'Tắm 3', max_capacity: 5 } as Shower,
+        { id: 'tam4', room_name: 'Tắm 4', max_capacity: 5 } as Shower,
+        { id: 'tam5', room_name: 'Tắm 5', max_capacity: 5 } as Shower,
+      ]);
+    }
   };
 
   const fetchDailyPlan = async () => {
