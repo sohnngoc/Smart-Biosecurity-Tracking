@@ -92,33 +92,41 @@ export default function PhanCongCongViec() {
       supabase.from('shower_rooms').select('*, checkpoints!inner(farm_id)').eq('checkpoints.farm_id', farmId)
     ]);
     
+    let finalZones: Zone[] = [];
     if (zoneRes.data && zoneRes.data.length > 0) {
+      finalZones = zoneRes.data;
       setZones(zoneRes.data);
     } else {
-      setZones([
+      finalZones = [
         { id: 'zone-1', zone_name: 'Khu chuồng đẻ', zone_type: 'farrowing', risk_level: 'high' } as Zone,
         { id: 'zone-2', zone_name: 'Khu chuồng bầu', zone_type: 'gestation', risk_level: 'medium' } as Zone,
         { id: 'zone-3', zone_name: 'Khu cách ly', zone_type: 'isolation', risk_level: 'isolation' } as Zone,
         { id: 'zone-4', zone_name: 'Khu phụ trợ', zone_type: 'support', risk_level: 'low' } as Zone
-      ]);
+      ];
+      setZones(finalZones);
     }
 
     if (barnRes.data && barnRes.data.length > 0) {
       setBarns(barnRes.data);
     } else {
+      const deZone = finalZones.find(z => z.zone_name.toLowerCase().includes('đẻ'))?.id || 'zone-1';
+      const bauZone = finalZones.find(z => z.zone_name.toLowerCase().includes('bầu'))?.id || 'zone-2';
+      const cachlyZone = finalZones.find(z => z.zone_name.toLowerCase().includes('cách ly'))?.id || 'zone-3';
+      const phutroZone = finalZones.find(z => z.zone_name.toLowerCase().includes('phụ trợ') || z.zone_name.toLowerCase().includes('kho') || z.zone_name.toLowerCase().includes('cổng'))?.id || 'zone-4';
+
       setBarns([
-        { id: 'de1', zone_id: 'zone-1', barn_name: 'Chuồng Đẻ 1', barn_type: 'farrowing' } as Barn,
-        { id: 'de2', zone_id: 'zone-1', barn_name: 'Chuồng Đẻ 2', barn_type: 'farrowing' } as Barn,
-        { id: 'de3', zone_id: 'zone-1', barn_name: 'Chuồng Đẻ 3', barn_type: 'farrowing' } as Barn,
-        { id: 'bau1', zone_id: 'zone-2', barn_name: 'Chuồng Bầu 1', barn_type: 'gestation' } as Barn,
-        { id: 'bau2', zone_id: 'zone-2', barn_name: 'Chuồng Bầu 2', barn_type: 'gestation' } as Barn,
-        { id: 'cach_ly1', zone_id: 'zone-3', barn_name: 'Cách Ly 1', barn_type: 'isolation' } as Barn,
-        { id: 'cach_ly2', zone_id: 'zone-3', barn_name: 'Cách Ly 2', barn_type: 'isolation' } as Barn,
-        { id: 'hau_bi_cl', zone_id: 'zone-3', barn_name: 'Hậu Bị Cách Ly', barn_type: 'isolation' } as Barn,
-        { id: 'kho_thuoc', zone_id: 'zone-4', barn_name: 'Kho Thuốc', barn_type: 'support' } as Barn,
-        { id: 'kho_cam', zone_id: 'zone-4', barn_name: 'Kho Cám', barn_type: 'support' } as Barn,
-        { id: 'sinh_hoat', zone_id: 'zone-4', barn_name: 'Khu Sinh Hoạt', barn_type: 'support' } as Barn,
-        { id: 'cong', zone_id: 'zone-4', barn_name: 'Cổng Trại', barn_type: 'support' } as Barn
+        { id: 'de1', zone_id: deZone, barn_name: 'Chuồng Đẻ 1', barn_type: 'farrowing' } as Barn,
+        { id: 'de2', zone_id: deZone, barn_name: 'Chuồng Đẻ 2', barn_type: 'farrowing' } as Barn,
+        { id: 'de3', zone_id: deZone, barn_name: 'Chuồng Đẻ 3', barn_type: 'farrowing' } as Barn,
+        { id: 'bau1', zone_id: bauZone, barn_name: 'Chuồng Bầu 1', barn_type: 'gestation' } as Barn,
+        { id: 'bau2', zone_id: bauZone, barn_name: 'Chuồng Bầu 2', barn_type: 'gestation' } as Barn,
+        { id: 'cach_ly1', zone_id: cachlyZone, barn_name: 'Cách Ly 1', barn_type: 'isolation' } as Barn,
+        { id: 'cach_ly2', zone_id: cachlyZone, barn_name: 'Cách Ly 2', barn_type: 'isolation' } as Barn,
+        { id: 'hau_bi_cl', zone_id: cachlyZone, barn_name: 'Hậu Bị Cách Ly', barn_type: 'isolation' } as Barn,
+        { id: 'kho_thuoc', zone_id: phutroZone, barn_name: 'Kho Thuốc', barn_type: 'support' } as Barn,
+        { id: 'kho_cam', zone_id: phutroZone, barn_name: 'Kho Cám', barn_type: 'support' } as Barn,
+        { id: 'sinh_hoat', zone_id: phutroZone, barn_name: 'Khu Sinh Hoạt', barn_type: 'support' } as Barn,
+        { id: 'cong', zone_id: phutroZone, barn_name: 'Cổng Trại', barn_type: 'support' } as Barn
       ]);
     }
 
