@@ -67,36 +67,43 @@ export default function PhanCongCongViec() {
     }
   }, [farmId, date]);
 
+  const fetchEmployees = async () => {
+    const { data } = await supabase.from('employees').select('id, full_name, job_title').eq('farm_id', farmId);
+    if (data && data.length > 0) {
+      setEmployees(data as any);
+    } else {
+      setEmployees([
+        { id: 'mock-1', full_name: 'Nguyễn Văn A', job_title: 'Kỹ thuật viên', employee_code: 'EMP-001', department: 'Kỹ thuật' },
+        { id: 'mock-2', full_name: 'Trần Thị B', job_title: 'Công nhân vệ sinh', employee_code: 'EMP-002', department: 'Vệ sinh' },
+        { id: 'mock-3', full_name: 'Lê Văn C', job_title: 'Bảo vệ', employee_code: 'EMP-003', department: 'An ninh' }
+      ]);
+    }
+  };
+
   const fetchMasterData = async () => {
-    const [empRes, zoneRes, barnRes, showerRes] = await Promise.all([
-      supabase.from('employees').select('*').eq('farm_id', farmId),
+    await fetchEmployees();
+    const [zoneRes, barnRes, showerRes] = await Promise.all([
       supabase.from('farm_zones').select('*').eq('farm_id', farmId),
       supabase.from('barns').select('*, farm_zones!inner(farm_id)').eq('farm_zones.farm_id', farmId),
       supabase.from('shower_rooms').select('*, checkpoints!inner(farm_id)').eq('checkpoints.farm_id', farmId)
     ]);
     
-    if (empRes.data) setEmployees(empRes.data);
     if (zoneRes.data) setZones(zoneRes.data);
     if (barnRes.data) setBarns(barnRes.data);
     if (showerRes.data) setShowers(showerRes.data);
   };
 
   const fetchDailyPlan = async () => {
-    // 1. Check if plan exists
-    const { data: plan } = await supabase
-      .from('daily_work_plans')
-      .select('*')
-      .eq('farm_id', farmId)
-      .eq('plan_date', date)
-      .single();
-
-    if (plan) {
-      setIsPublished(plan.status === 'published');
-      const { data: tasks } = await supabase
-        .from('assigned_tasks')
-        .select('*')
-        .eq('plan_id', plan.id);
-      if (tasks) setAssignments(tasks as Assignment[]);
+    const { data: planData } = await supabase.from('daily_work_plans').select('*').eq('farm_id', farmId).eq('plan_date', date).single();
+    if (planData) {
+      const { data: tasks } = await supabase.from('assigned_tasks').select('*').eq('plan_id', planData.id);
+      if (tasks && tasks.length > 0) {
+        setIsPublished(true);
+        setAssignments(tasks);
+      } else {
+        setIsPublished(false);
+        setAssignments([]);
+      }
     } else {
       setIsPublished(false);
       setAssignments([]);

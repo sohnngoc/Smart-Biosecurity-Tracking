@@ -9,6 +9,7 @@ import BanDoNoiBo from './pages/QuanTriTrai/BanDoNoiBo';
 import NguoiRaVao from './pages/QuanTriTrai/NguoiRaVao';
 import PhanCongCongViec from './pages/QuanTriTrai/PhanCongCongViec';
 import NhanViec from './pages/QuanTriTrai/NhanViec';
+import CongViecDuocGiao from './pages/QuanTriTrai/CongViecDuocGiao';
 import ThietBi from './pages/QuanTriTrai/ThietBi';
 import CanhBao from './pages/QuanTriTrai/CanhBao';
 import MoPhongRuiRo from './pages/QuanTriTrai/MoPhongRuiRo';
@@ -47,6 +48,7 @@ function App() {
           <Route path="duyet-vao-trai" element={<DuyetVaoTrai />} />
           <Route path="nguoi-ra-vao" element={<NguoiRaVao />} />
           <Route path="phan-cong-cong-viec" element={<PhanCongCongViec />} />
+          <Route path="cong-viec-duoc-giao" element={<CongViecDuocGiao />} />
           <Route path="nhan-viec" element={<NhanViec />} />
           <Route path="thiet-bi" element={<ThietBi />} />
           <Route path="canh-bao" element={<CanhBao />} />
