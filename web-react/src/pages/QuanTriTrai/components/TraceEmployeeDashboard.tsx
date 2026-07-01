@@ -1,4 +1,4 @@
-import { X, Search, Map, ShieldAlert, CheckCircle, AlertTriangle, User, UserX, Clock, Calendar } from 'lucide-react';
+import { X, Search, Map, ShieldAlert, CheckCircle, AlertTriangle, UserX, Clock, Calendar } from 'lucide-react';
 import { globalMockLogs } from '../../../data/mockAccessLogs';
 import { useState, useMemo } from 'react';
 

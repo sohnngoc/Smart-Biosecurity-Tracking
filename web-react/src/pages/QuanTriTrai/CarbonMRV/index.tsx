@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../../../lib/supabaseClient';
-import { LayoutDashboard, Leaf, Database, Download, FileText } from 'lucide-react';
+import { LayoutDashboard, Leaf, Database, Download } from 'lucide-react';
 import DashboardTab from './Tabs/DashboardTab';
 import EFLibraryTab from './Tabs/EmissionFactorLibraryTab'; // cache bust
 import ExportTab from './Tabs/ReportExportTab'; // cache bust
