@@ -384,6 +384,70 @@ export default function BanDoTongQuan() {
         </div>
         
         <div className="flex items-center space-x-1 lg:space-x-3">
+          {/* Simulation Action Menu in Taskbar */}
+          <div className="relative">
+            <button 
+              onClick={() => setShowSimMenu(!showSimMenu)}
+              className={cn(
+                "hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl shadow-md hover:shadow-lg transition-all font-bold text-sm",
+                showSimMenu ? "bg-slate-800 text-white dark:bg-white dark:text-slate-900" : "bg-orange-500 hover:bg-orange-600 text-white"
+              )}
+            >
+              {showSimMenu ? <X size={18} /> : <Play size={18} className="fill-current" />}
+              <span>{showSimMenu ? 'Đóng' : 'Mô Phỏng Rủi Ro'}</span>
+            </button>
+
+            <AnimatePresence>
+              {showSimMenu && (
+                <motion.div 
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  className="absolute top-full right-0 mt-3 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-2xl w-72 lg:w-80 overflow-hidden border border-slate-200/50 dark:border-slate-700/50 origin-top-right z-100"
+                >
+                  <div className="p-4 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-700/50">
+                    <h3 className="font-bold text-slate-800 dark:text-white text-sm">Mô Phỏng Kịch Bản Trực Tiếp</h3>
+                    <p className="text-[11px] text-slate-500 mt-0.5">Thử nghiệm các tình huống rủi ro liên trại</p>
+                  </div>
+                  <div className="p-2 space-y-1">
+                    <button 
+                      onClick={() => runGlobalScenario('S1')}
+                      className="w-full text-left p-3 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition flex items-start group"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center mr-3 shrink-0 group-hover:scale-110 transition-transform">
+                        <AlertTriangle className="text-red-600 dark:text-red-400" size={16} />
+                      </div>
+                      <div>
+                        <div className="font-bold text-slate-800 dark:text-white text-sm">S1: Vi phạm cách ly 48h</div>
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Nhân sự di chuyển giữa 2 trại sai quy định</div>
+                      </div>
+                    </button>
+                    <button 
+                      onClick={() => runGlobalScenario('S2')}
+                      className="w-full text-left p-3 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-xl transition flex items-start group"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center mr-3 shrink-0 group-hover:scale-110 transition-transform">
+                        <Info className="text-amber-600 dark:text-amber-400" size={16} />
+                      </div>
+                      <div>
+                        <div className="font-bold text-slate-800 dark:text-white text-sm">S2: Xe cám liên trại</div>
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Xe tải tiến vào cổng trại B sau khi rời trại A</div>
+                      </div>
+                    </button>
+                    <div className="h-px bg-slate-100 dark:bg-slate-700/50 my-1 mx-2"></div>
+                    <button 
+                      onClick={resetGlobalSimulation}
+                      className="w-full text-left p-3 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition flex items-center text-slate-600 dark:text-slate-300"
+                    >
+                      <RotateCcw className="mr-3" size={18} />
+                      <span className="font-medium text-sm">Reset trạng thái An Toàn</span>
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
           {/* Add Farm Button (Desktop only for cleanliness, or icon on mobile) */}
           <button 
             onClick={() => {
@@ -553,66 +617,7 @@ export default function BanDoTongQuan() {
         </div>
       </motion.div>
 
-      {/* Floating Simulation Action Menu (Desktop: Bottom right, Mobile: Bottom right above FAB) */}
-      <div className="absolute bottom-6 right-4 lg:bottom-8 lg:right-8 z-50 flex flex-col items-end">
-        {showSimMenu && (
-          <motion.div 
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            className="mb-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-2xl shadow-2xl w-72 lg:w-80 overflow-hidden border border-slate-200/50 dark:border-slate-700/50 origin-bottom-right"
-          >
-            <div className="p-4 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-700/50">
-              <h3 className="font-bold text-slate-800 dark:text-white text-sm">Mô Phỏng Kịch Bản Trực Tiếp</h3>
-              <p className="text-[11px] text-slate-500 mt-0.5">Thử nghiệm các tình huống rủi ro liên trại</p>
-            </div>
-            <div className="p-2 space-y-1">
-              <button 
-                onClick={() => runGlobalScenario('S1')}
-                className="w-full text-left p-3 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition flex items-start group"
-              >
-                <div className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center mr-3 shrink-0 group-hover:scale-110 transition-transform">
-                  <AlertTriangle className="text-red-600 dark:text-red-400" size={16} />
-                </div>
-                <div>
-                  <div className="font-bold text-slate-800 dark:text-white text-sm">S1: Vi phạm cách ly 48h</div>
-                  <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Nhân sự di chuyển giữa 2 trại sai quy định</div>
-                </div>
-              </button>
-              <button 
-                onClick={() => runGlobalScenario('S2')}
-                className="w-full text-left p-3 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-xl transition flex items-start group"
-              >
-                <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center mr-3 shrink-0 group-hover:scale-110 transition-transform">
-                  <Info className="text-amber-600 dark:text-amber-400" size={16} />
-                </div>
-                <div>
-                  <div className="font-bold text-slate-800 dark:text-white text-sm">S2: Xe cám liên trại</div>
-                  <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Xe tải tiến vào cổng trại B sau khi rời trại A</div>
-                </div>
-              </button>
-              <div className="h-px bg-slate-100 dark:bg-slate-700/50 my-1 mx-2"></div>
-              <button 
-                onClick={resetGlobalSimulation}
-                className="w-full text-left p-3 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition flex items-center text-slate-600 dark:text-slate-300"
-              >
-                <RotateCcw className="mr-3" size={18} />
-                <span className="font-medium text-sm">Reset trạng thái An Toàn</span>
-              </button>
-            </div>
-          </motion.div>
-        )}
 
-        <button 
-          onClick={() => setShowSimMenu(!showSimMenu)}
-          className={cn(
-            "flex items-center gap-2 px-5 py-3 rounded-full shadow-lg hover:shadow-xl transition-all font-bold text-sm",
-            showSimMenu ? "bg-slate-800 text-white dark:bg-white dark:text-slate-900" : "bg-emerald-600 hover:bg-emerald-700 text-white"
-          )}
-        >
-          {showSimMenu ? <X size={20} /> : <Play size={20} className="fill-current" />}
-          <span className="hidden sm:inline">{showSimMenu ? 'Đóng Menu' : 'Mô Phỏng Rủi Ro'}</span>
-        </button>
-      </div>
 
       {/* Simulation Toast (Bottom Left or Center) */}
       <AnimatePresence>
