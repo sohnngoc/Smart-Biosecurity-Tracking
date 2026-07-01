@@ -35,7 +35,7 @@ export default function DangNhap() {
       <div className="hidden md:flex md:w-1/2 relative bg-gray-900 overflow-hidden">
         <img 
           src="/login-bg.png" 
-          alt="Smart Biosecurity Farm" 
+          alt="BioTrace" 
           className="absolute inset-0 w-full h-full object-cover opacity-80"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-gray-900/90 to-transparent"></div>

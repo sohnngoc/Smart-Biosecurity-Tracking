@@ -18,7 +18,7 @@ export default function Sidebar({ farmCode }: SidebarProps) {
             <div className="w-3 h-3 bg-white rounded-full animate-pulse" />
           </div>
           <h2 className="text-xl font-black tracking-tight bg-clip-text text-transparent bg-linear-to-r from-white via-slate-200 to-slate-400">
-            Smart<span className="text-emerald-400">Bio</span>
+            Bio<span className="text-emerald-400">Trace</span>
           </h2>
         </div>
       </div>

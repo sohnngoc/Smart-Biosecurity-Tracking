@@ -16,7 +16,7 @@ const resources = {
       invalid_login: "Thông tin đăng nhập không hợp lệ",
       overview: "Tổng quan hệ thống",
       farm_admin: "Quản trị trại",
-      map_title: "Hệ Thống Theo Dõi An Toàn Sinh Học Thông Minh",
+      map_title: "Hệ Thống BioTrace",
       map_subtitle: "Bản đồ tổng quan hệ thống trại",
       add_farm: "Thêm trại mới",
       refresh: "Làm mới",
@@ -25,7 +25,7 @@ const resources = {
   },
   en: {
     translation: {
-      login_title: "Smart Biosecurity",
+      login_title: "BioTrace",
       login_subtitle: "Tracking System",
       login_tagline: "Prevent. Track. Protect.",
       email: "Email",
@@ -36,7 +36,7 @@ const resources = {
       invalid_login: "Invalid credentials",
       overview: "System Overview",
       farm_admin: "Farm Admin",
-      map_title: "Smart Biosecurity Tracking System",
+      map_title: "BioTrace System",
       map_subtitle: "Farm System Global Map",
       add_farm: "Add New Farm",
       refresh: "Refresh",

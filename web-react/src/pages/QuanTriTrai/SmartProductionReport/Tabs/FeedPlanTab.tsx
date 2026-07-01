@@ -52,7 +52,7 @@ export default function FeedPlanTab({ data, week }: FeedPlanTabProps) {
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
             <AlertTriangle className="text-red-600 dark:text-red-500" size={20} />
-            <h4 className="font-semibold text-red-800 dark:text-red-500">Cảnh báo An toàn sinh học (Smart Biosecurity)</h4>
+            <h4 className="font-semibold text-red-800 dark:text-red-500">Cảnh báo An toàn sinh học (BioTrace)</h4>
           </div>
           <ul className="list-disc list-inside space-y-1 text-sm text-red-700 dark:text-red-400">
             {biosecurityAlerts.map((alert, idx) => (

@@ -56,7 +56,7 @@ export default function QuanTriTraiLayout() {
                 Kiểm Soát An Toàn Sinh Học
               </h1>
               <h1 className="text-base font-bold text-slate-800 sm:hidden">
-                Smart Bio
+                BioTrace
               </h1>
               <div className="flex items-center gap-2 mt-0.5 sm:mt-1">
                 <span className="text-[10px] sm:text-xs font-semibold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full border border-emerald-200">
