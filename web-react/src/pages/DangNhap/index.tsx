@@ -38,7 +38,7 @@ export default function DangNhap() {
           alt="BioTrace" 
           className="absolute inset-0 w-full h-full object-cover opacity-80"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-gray-900/90 to-transparent"></div>
+        <div className="absolute inset-0 bg-linear-to-t from-gray-900/90 to-transparent"></div>
         <div className="absolute bottom-12 left-12 right-12 z-10 text-white">
           <h2 className="text-4xl font-bold tracking-tight mb-4">
             {t('login_title')}<br/><span className="text-blue-400">{t('login_subtitle')}</span>
