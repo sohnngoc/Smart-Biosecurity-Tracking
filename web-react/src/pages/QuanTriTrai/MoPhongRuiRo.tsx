@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useOutletContext} from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
-import { ShieldAlert, Play, RotateCcw, AlertTriangle, UserX, CheckCircle } from 'lucide-react';
+import { ShieldAlert, Play, RotateCcw, AlertTriangle, UserX, CheckCircle, Search, MapPin } from 'lucide-react';
+import TraceEmployeeDashboard from './components/TraceEmployeeDashboard';
+import TraceBarnDashboard from './components/TraceBarnDashboard';
 
 const SCENARIOS = [
   {
@@ -23,6 +25,26 @@ const SCENARIOS = [
     riskPoints: 40,
     icon: <AlertTriangle className="text-red-500" size={24} />,
     color: 'border-red-500'
+  },
+  {
+    id: 'S3',
+    code: 'TRACE_EMPLOYEE',
+    title: 'S3: Truy vết lịch sử di chuyển công nhân',
+    desc: 'Khi phát hiện một công nhân có nguy cơ dịch tễ (Đinh Văn Nam), truy vết lại toàn bộ lịch sử ra/vào các chuồng trong vòng 30 ngày.',
+    riskLevel: 'Warning',
+    riskPoints: 0,
+    icon: <Search className="text-indigo-500" size={24} />,
+    color: 'border-indigo-500'
+  },
+  {
+    id: 'S4',
+    code: 'TRACE_BARN',
+    title: 'S4: Truy vết lịch sử ra/vào Chuồng đẻ 1',
+    desc: 'Khi phát hiện rủi ro dịch bệnh tại Chuồng đẻ 1, truy vết lại toàn bộ những người đã từng vào chuồng này trong vòng 30 ngày.',
+    riskLevel: 'Critical',
+    riskPoints: 0,
+    icon: <MapPin className="text-red-500" size={24} />,
+    color: 'border-red-500'
   }
 ];
 
@@ -31,6 +53,8 @@ export default function MoPhongRuiRo() {
   const [running, setRunning] = useState<string | null>(null);
   const [resetting, setResetting] = useState(false);
   const [toast, setToast] = useState<{msg: string, type: 'success'|'error'} | null>(null);
+  
+  const [activeDrawer, setActiveDrawer] = useState<'S3' | 'S4' | null>(null);
 
   const showToast = (msg: string, type: 'success'|'error') => {
     setToast({ msg, type });
@@ -39,6 +63,12 @@ export default function MoPhongRuiRo() {
 
   const handleRunSimulation = async (scenario: typeof SCENARIOS[0]) => {
     if (!farmId) return;
+    
+    if (scenario.id === 'S3' || scenario.id === 'S4') {
+      setActiveDrawer(scenario.id);
+      return;
+    }
+
     setRunning(scenario.id);
 
     try {
@@ -199,6 +229,9 @@ export default function MoPhongRuiRo() {
           </div>
         ))}
       </div>
+
+      {activeDrawer === 'S3' && <TraceEmployeeDashboard onClose={() => setActiveDrawer(null)} />}
+      {activeDrawer === 'S4' && <TraceBarnDashboard onClose={() => setActiveDrawer(null)} />}
     </div>
   );
 }

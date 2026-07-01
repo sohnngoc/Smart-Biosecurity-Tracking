@@ -67,6 +67,13 @@ export const MENU_SECTIONS = [
     ]
   },
   {
+    title: "Sustainability / Carbon MRV",
+    items: [
+      { name: 'Dashboard Phát Thải', path: '/carbon-mrv', icon: <LayoutDashboard size={20} /> },
+      { name: 'Nhập liệu MRV', path: '/carbon-mrv-input', icon: <FileText size={20} /> },
+    ]
+  },
+  {
     title: "Môi trường giả lập",
     items: [
       { name: 'Mô phỏng rủi ro', path: '/mo-phong-rui-ro', icon: <ShieldAlert size={20} /> },
